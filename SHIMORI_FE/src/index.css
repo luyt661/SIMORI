@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  /* Màu sắc thương hiệu SHIMORI */
+  --color-primary: #EAB308;
+  --color-studio-bg: #ffffff;
+  --color-studio-card: #f9f9f9;
+  --color-studio-border: #e5e7eb;
+  --color-gold: #b08d26;
+  --color-gold-light: #d4af37;
+  --color-dark-text: #1a1a1a;
+  --color-muted-text: #666666;
+}
+
+/* Các tiện ích tùy chỉnh cho Studio */
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility custom-gradient {
+  background: radial-gradient(circle at center, #ffffff 0%, #f0f0f0 100%);
+}
+
+@layer base {
+  body {
+    @apply bg-white text-dark-text;
+    font-family: 'Manrope', sans-serif;
+  }
+}
