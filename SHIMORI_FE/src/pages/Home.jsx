@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -55,9 +55,24 @@ const Home = () => {
 
           {/* Menu */}
           <nav className="hidden lg:flex items-center gap-8">
-            {['Collections', 'Process', 'About', 'Bespoke'].map((item) => (
-              <a key={item} href="#" className="text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-black transition-colors">
-                {item}
+            {[
+              { label: 'Collections', id: 'collections' },
+              { label: 'Process', id: 'process' },
+              { label: 'About', id: 'about' }
+            ].map((item) => (
+              <a 
+                key={item.id}
+                href={`#${item.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  const element = document.getElementById(item.id);
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
+                className="text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-black transition-colors cursor-pointer"
+              >
+                {item.label}
               </a>
             ))}
           </nav>
@@ -81,6 +96,13 @@ const Home = () => {
           >
             Design Now
           </button>
+
+          <Link 
+            to="/login"
+            className="text-black px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:text-[#facc15] transition-all"
+          >
+            Sign In
+          </Link>
 
           <div className="flex items-center gap-4 text-gray-400">
             <span className="material-symbols-outlined cursor-pointer hover:text-black transition-colors">favorite</span>
@@ -127,7 +149,7 @@ const Home = () => {
       </section>
 
       {/* FEATURED COLLECTION - Giữ nguyên */}
-      <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="collections" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
           <div>
             <span className="text-[#facc15] font-black uppercase tracking-[0.3em] text-[10px]">Exquisite Selection</span>
@@ -158,7 +180,7 @@ const Home = () => {
       </section>
 
       {/* HOW IT WORKS - Giữ nguyên */}
-      <section className="bg-gray-50 border-y border-gray-100 py-24">
+      <section id="process" className="bg-gray-50 border-y border-gray-100 py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-slate-900 text-4xl font-black mb-20 tracking-tight uppercase">How It Works</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -172,6 +194,33 @@ const Home = () => {
                   </div>
                 ))}
             </div>
+        </div>
+      </section>
+
+      {/* ABOUT SECTION */}
+      <section id="about" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <span className="text-[#facc15] font-black uppercase tracking-[0.3em] text-[10px]">Our Story</span>
+            <h2 className="text-slate-900 text-4xl font-black mt-4 mb-8 tracking-tight uppercase">About SHIMORI</h2>
+            <p className="text-gray-600 text-lg leading-relaxed mb-6">
+              SHIMORI is redefining luxury jewelry through the fusion of traditional craftsmanship and cutting-edge 3D technology. We believe every piece tells a unique story.
+            </p>
+            <p className="text-gray-600 text-lg leading-relaxed mb-8">
+              Our artisans bring decades of expertise to create heirloom-quality pieces while our immersive 3D studio empowers you to design exactly what you envision. From initial concept to final masterpiece, we're with you every step of the way.
+            </p>
+            <button className="bg-[#facc15] text-black px-8 py-3 rounded-lg font-black uppercase text-sm tracking-widest hover:bg-black hover:text-[#facc15] transition-all">
+              Learn More
+            </button>
+          </div>
+          <div className="relative">
+            <img 
+              src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1000&auto=format&fit=crop" 
+              alt="About SHIMORI" 
+              className="rounded-3xl shadow-2xl"
+            />
+            <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-[#facc15]/20 rounded-full blur-3xl"></div>
+          </div>
         </div>
       </section>
 

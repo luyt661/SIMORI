@@ -24,6 +24,9 @@ const MainLayout = ({ children }) => {
                 <span className="material-symbols-outlined text-slate-400 text-xl">search</span>
                 <input className="bg-transparent border-none focus:ring-0 text-sm placeholder:text-slate-400 w-32 lg:w-48" placeholder="Find your style..." type="text" />
               </div>
+              <Link to="/login" className="text-slate-600 dark:text-slate-300 text-sm font-medium hover:text-primary transition-colors px-3 py-2">
+                Sign In
+              </Link>
               <button className="bg-primary hover:bg-primary/90 text-slate-950 px-5 py-2 rounded-lg text-sm font-bold transition-all transform hover:scale-105">
                 Design Now
               </button>
