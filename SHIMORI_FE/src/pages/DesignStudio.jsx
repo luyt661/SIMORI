@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // 1. Import hook điều hướng
+import '@google/model-viewer';
+import { modelGroups } from '../models';
 
 // --- Sub-components giữ nguyên hoàn toàn ---
 const SidebarSection = ({ title, children, step }) => (
@@ -24,12 +26,33 @@ const DesignStudio = () => {
   });
 
   // ... (Tất cả các mảng settings, materials, gemstones, v.v. GIỮ NGUYÊN) ...
-  const settings = [ { name: 'Prong', icon: 'diamond' }, { name: 'Bezel', icon: 'circle' }, { name: 'Halo', icon: 'wb_sunny' }, { name: 'Tension', icon: 'unfold_less' }, { name: 'Channel', icon: 'view_column' } ];
-  const materials = [ { name: '18K Yellow Gold', color: 'from-[#b08d26] to-[#d4af37]' }, { name: 'Platinum 950', color: 'from-gray-300 to-gray-100' }, { name: 'Rose Gold', color: 'from-pink-300 to-pink-50' }, { name: 'Black Gold', color: 'from-gray-900 to-gray-700' } ];
-  const gemstones = [ { name: 'Diamond', color: 'bg-white shadow-inner', label: 'Princess' }, { name: 'Sapphire', color: 'bg-blue-600', label: 'Round' }, { name: 'Ruby', color: 'bg-red-600', label: 'Cushion' }, { name: 'Emerald', color: 'bg-emerald-600', label: 'Pear' }, { name: 'Amethyst', color: 'bg-purple-600', label: 'Oval' }, { name: 'Topaz', color: 'bg-cyan-400', label: 'Marquise' } ];
-  const bandStyles = ['Plain', 'Pavé', 'Eternity', 'Twisted', 'Milgrain', 'Split Shank'];
+  const fallbackSettings = [ { name: 'Prong', icon: 'diamond' }, { name: 'Bezel', icon: 'circle' }, { name: 'Halo', icon: 'wb_sunny' }, { name: 'Tension', icon: 'unfold_less' }, { name: 'Channel', icon: 'view_column' } ];
+  const settings = modelGroups.settings.length
+    ? modelGroups.settings.map((m) => ({ name: m.name, icon: 'diamond', url: m.url }))
+    : fallbackSettings;
+
+  const fallbackMaterials = [ { name: '18K Yellow Gold', color: 'from-[#b08d26] to-[#d4af37]' }, { name: 'Platinum 950', color: 'from-gray-300 to-gray-100' }, { name: 'Rose Gold', color: 'from-pink-300 to-pink-50' }, { name: 'Black Gold', color: 'from-gray-900 to-gray-700' } ];
+  const materials = modelGroups.materials.length
+    ? modelGroups.materials.map((m) => ({ name: m.name, color: 'from-gray-200 to-gray-50', url: m.url }))
+    : fallbackMaterials;
+
+  const fallbackGemstones = [ { name: 'Diamond', color: 'bg-white shadow-inner', label: 'Princess' }, { name: 'Sapphire', color: 'bg-blue-600', label: 'Round' }, { name: 'Ruby', color: 'bg-red-600', label: 'Cushion' }, { name: 'Emerald', color: 'bg-emerald-600', label: 'Pear' }, { name: 'Amethyst', color: 'bg-purple-600', label: 'Oval' }, { name: 'Topaz', color: 'bg-cyan-400', label: 'Marquise' } ];
+  const gemstones = modelGroups.gems.length
+    ? modelGroups.gems.map((g) => ({ name: g.name, color: 'bg-gray-200', label: g.name, url: g.url }))
+    : fallbackGemstones;
+
+  const fallbackBandStyles = ['Plain', 'Pavé', 'Eternity', 'Twisted', 'Milgrain', 'Split Shank'];
+  const bandStyles = modelGroups.bands.length ? modelGroups.bands.map((b) => b.name) : fallbackBandStyles;
+
   const textures = ['Polished', 'Brushed', 'Hammered', 'Matte', 'Diamond-Cut'];
+  const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const settingModelUrl = (() => {
+    const target = normalize(config.setting);
+    const match = modelGroups.settings.find((m) => normalize(m.name) === target || normalize(m.key) === target);
+    return match?.url || modelGroups.settings[0]?.url;
+  })();
   const priceDetails = [ { label: 'Base Metal', value: config.material, price: '+$2,450' }, { label: 'Center Stone', value: `${config.gemstone} 1.5ct`, price: '+$10,800' }, { label: 'Band Style', value: config.bandStyle, price: '+$850' }, { label: 'Craftsmanship', value: `${config.texture} Finish`, price: 'Included' }, ];
+  const widthScale = (config.width / 2.5).toFixed(3);
 
   return (
     <div className="h-screen flex flex-col bg-white font-['Manrope'] overflow-hidden text-[#1a1a1a]">
@@ -127,7 +150,15 @@ const DesignStudio = () => {
               <span className="text-gray-400">Width</span>
               <span className="text-[#b08d26]">{config.width} mm</span>
             </div>
-            <input type="range" min="1.5" max="6.0" step="0.1" value={config.width} onChange={(e) => setConfig({...config, width: e.target.value})} className="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#b08d26]" />
+            <input
+              type="range"
+              min="1.5"
+              max="6.0"
+              step="0.1"
+              value={config.width}
+              onChange={(e) => setConfig({ ...config, width: parseFloat(e.target.value) })}
+              className="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#b08d26]"
+            />
           </SidebarSection>
 
           <SidebarSection step="06" title="Surface Texture">
@@ -155,7 +186,40 @@ const DesignStudio = () => {
 
           <div className="flex-1 flex flex-col items-center justify-center p-10 min-h-[600px] shrink-0">
             <div className="relative group flex flex-col items-center">
-              <img alt="Ring" className="max-h-[50vh] object-contain drop-shadow-2xl" src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=1000" />
+              {settingModelUrl ? (
+                <div style={{
+                  position: 'relative',
+                  width: 'min(70vw, 900px)',
+                  height: 'min(70vw, 600px)',
+                  background: 'radial-gradient(ellipse at center, #2a2520 0%, #0f0e0c 100%)',
+                  borderRadius: '20px',
+                  overflow: 'hidden',
+                }}>
+                  {settings.map((s) => s.url && (
+                    <model-viewer
+                      key={s.url}
+                      src={s.url}
+                      camera-controls
+                      auto-rotate
+                      shadow-intensity="2"
+                      exposure="1.2"
+                      background-color="#0f0e0c"
+                      scale={`1 ${widthScale} 1`}
+                      style={{
+                        position: 'absolute',
+                        top: '50%', left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: '50%', height: '50%',
+                        opacity: normalize(s.name) === normalize(config.setting) ? 1 : 0,
+                        pointerEvents: normalize(s.name) === normalize(config.setting) ? 'auto' : 'none',
+                        transition: 'opacity 0.15s',
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <img alt="Ring" className="max-h-[50vh] object-contain drop-shadow-2xl" src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=1000" />
+              )}
               <div className="mt-8 flex flex-col items-center gap-2">
                 <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100 cursor-pointer">
                   <span className="material-symbols-outlined text-[#b08d26]">open_with</span>
@@ -191,7 +255,7 @@ const DesignStudio = () => {
             </div>
             <div className="flex gap-6">
               <span className="text-black font-black">Design ID: LUX-882-99</span>
-              <span>© 2024 Unified 3D Studio</span>
+              <span>© 2026 Unified 3D Studio</span>
             </div>
           </div>
           <div className="h-32 shrink-0"></div>

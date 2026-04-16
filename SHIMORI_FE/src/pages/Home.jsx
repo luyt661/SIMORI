@@ -16,19 +16,19 @@ const Home = () => {
       id: 2,
       title: "Royal Halo Series",
       price: "$2,500",
-      image: "https://images.unsplash.com/photo-1588444839799-eb6bd27e386a?q=80&w=2070"
+      image: "https://lirysjewelry.com/cdn/shop/files/halo.webp?v=1731698776&width=500"
     },
     {
       id: 3,
       title: "Vintage Eternity",
       price: "$1,850",
-      image: "https://images.unsplash.com/photo-1598560912015-f98f9f76a390?q=80&w=2070"
+      image: "https://erstwhilejewelry.com/cdn/shop/files/art-deco-2-carat-old-mine-cut-diamond-vintage-eternity-band-size-6-25-1127732633.png?v=1756479104&width=768"
     },
     {
       id: 4,
       title: "Modern Minimalist",
       price: "$950",
-      image: "https://images.unsplash.com/photo-1603561591411-071c4f71a9a9?q=80&w=2070"
+      image: "https://mjjewels.com/21117-large_default/diamond-solitaire-modern-minimalist-engagement-ring.jpg"
     }
   ];
 

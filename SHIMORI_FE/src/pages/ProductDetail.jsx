@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import imgFront from '../demo-images/front.png';
+import imgSide from '../demo-images/side.png';
+import imgClose from '../demo-images/close.png';
+import imgLifestyle from '../demo-images/lifestyle.png';
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -7,10 +11,10 @@ const ProductDetail = () => {
 
   // Cập nhật 4 ảnh thực tế: Chính diện, Nghiêng, Cận cảnh, và Lifestyle
   const thumbnails = [
-    "https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=2070", // Ảnh 1: Chính diện
-    "https://images.unsplash.com/photo-1588444839799-eb6bd27e386a?q=80&w=2070", // Ảnh 2: Góc nghiêng
-    "https://images.unsplash.com/photo-1598560912015-f98f9f76a390?q=80&w=2070", // Ảnh 3: Cận cảnh viên chủ
-    "https://images.unsplash.com/photo-1603561591411-071c4f71a9a9?q=80&w=2070"  // Ảnh 4: Hộp đựng sang trọng
+    imgFront, // Ảnh 1: Chính diện
+    imgSide, // Ảnh 2: Góc nghiêng
+    imgClose, // Ảnh 3: Cận cảnh viên chủ
+    imgLifestyle // Ảnh 4: Hộp đựng sang trọng
   ];
 
   // Khởi tạo ảnh chính mặc định là ảnh đầu tiên
