@@ -1,9 +1,54 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Import hook điều hướng
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import '@google/model-viewer';
 import { modelGroups } from '../models';
 
-// --- Sub-components giữ nguyên hoàn toàn ---
+const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const MATERIAL_CONFIGS = {
+  'Titan':         { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40, displayColor: 'from-[#374151] to-[#6b7280]' },
+  'Bạc':           { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05, displayColor: 'from-[#cbd5e1] to-[#f8fafc]' },
+  'Sắt không gỉ': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20, displayColor: 'from-[#52525b] to-[#a1a1aa]' },
+};
+
+const textures = ['Polished', 'Brushed', 'Hammered', 'Matte', 'Diamond-Cut'];
+
+const fallbackSettings = [
+  { name: 'Prong', icon: 'diamond' },
+  { name: 'Bezel', icon: 'circle' },
+  { name: 'Halo', icon: 'wb_sunny' },
+  { name: 'Tension', icon: 'unfold_less' },
+  { name: 'Channel', icon: 'view_column' },
+];
+const settings = modelGroups.settings.length
+  ? modelGroups.settings.map((m) => ({ name: m.name, icon: 'diamond', url: m.url }))
+  : fallbackSettings;
+
+const fallbackMaterials = Object.entries(MATERIAL_CONFIGS).map(([name, cfg]) => ({
+  name,
+  color: cfg.displayColor,
+}));
+const materials = modelGroups.materials.length
+  ? modelGroups.materials.map((m) => ({ name: m.name, color: 'from-gray-200 to-gray-50', url: m.url }))
+  : fallbackMaterials;
+
+const fallbackGemstones = [
+  { name: 'Diamond', color: 'bg-white shadow-inner', label: 'Princess' },
+  { name: 'Sapphire', color: 'bg-blue-600', label: 'Round' },
+  { name: 'Ruby', color: 'bg-red-600', label: 'Cushion' },
+  { name: 'Emerald', color: 'bg-emerald-600', label: 'Pear' },
+  { name: 'Amethyst', color: 'bg-purple-600', label: 'Oval' },
+  { name: 'Topaz', color: 'bg-cyan-400', label: 'Marquise' },
+];
+const gemstones = modelGroups.gems.length
+  ? modelGroups.gems.map((g) => ({ name: g.name, color: 'bg-gray-200', label: g.name, url: g.url }))
+  : fallbackGemstones;
+
+const fallbackBandStyles = ['Plain', 'Pavé', 'Eternity', 'Twisted', 'Milgrain', 'Split Shank'];
+const bandStyles = modelGroups.bands.length ? modelGroups.bands.map((b) => b.name) : fallbackBandStyles;
+
+const defaultSetting = settings[0]?.name || 'Prong';
+
 const SidebarSection = ({ title, children, step }) => (
   <section className="mb-10">
     <label className="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400 mb-5 block">
@@ -14,49 +59,58 @@ const SidebarSection = ({ title, children, step }) => (
 );
 
 const DesignStudio = () => {
-  const navigate = useNavigate(); // 2. Khởi tạo navigate
+  const navigate = useNavigate();
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
   const [config, setConfig] = useState({
-    setting: 'Prong',
-    material: 'Platinum 950',
+    setting: defaultSetting,
+    material: 'Titan',
     gemstone: 'Diamond',
     bandStyle: 'Plain',
     width: 2.5,
     texture: 'Polished'
   });
 
-  // ... (Tất cả các mảng settings, materials, gemstones, v.v. GIỮ NGUYÊN) ...
-  const fallbackSettings = [ { name: 'Prong', icon: 'diamond' }, { name: 'Bezel', icon: 'circle' }, { name: 'Halo', icon: 'wb_sunny' }, { name: 'Tension', icon: 'unfold_less' }, { name: 'Channel', icon: 'view_column' } ];
-  const settings = modelGroups.settings.length
-    ? modelGroups.settings.map((m) => ({ name: m.name, icon: 'diamond', url: m.url }))
-    : fallbackSettings;
-
-  const fallbackMaterials = [ { name: '18K Yellow Gold', color: 'from-[#b08d26] to-[#d4af37]' }, { name: 'Platinum 950', color: 'from-gray-300 to-gray-100' }, { name: 'Rose Gold', color: 'from-pink-300 to-pink-50' }, { name: 'Black Gold', color: 'from-gray-900 to-gray-700' } ];
-  const materials = modelGroups.materials.length
-    ? modelGroups.materials.map((m) => ({ name: m.name, color: 'from-gray-200 to-gray-50', url: m.url }))
-    : fallbackMaterials;
-
-  const fallbackGemstones = [ { name: 'Diamond', color: 'bg-white shadow-inner', label: 'Princess' }, { name: 'Sapphire', color: 'bg-blue-600', label: 'Round' }, { name: 'Ruby', color: 'bg-red-600', label: 'Cushion' }, { name: 'Emerald', color: 'bg-emerald-600', label: 'Pear' }, { name: 'Amethyst', color: 'bg-purple-600', label: 'Oval' }, { name: 'Topaz', color: 'bg-cyan-400', label: 'Marquise' } ];
-  const gemstones = modelGroups.gems.length
-    ? modelGroups.gems.map((g) => ({ name: g.name, color: 'bg-gray-200', label: g.name, url: g.url }))
-    : fallbackGemstones;
-
-  const fallbackBandStyles = ['Plain', 'Pavé', 'Eternity', 'Twisted', 'Milgrain', 'Split Shank'];
-  const bandStyles = modelGroups.bands.length ? modelGroups.bands.map((b) => b.name) : fallbackBandStyles;
-
-  const textures = ['Polished', 'Brushed', 'Hammered', 'Matte', 'Diamond-Cut'];
-  const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const settingModelUrl = (() => {
+  const settingModelUrl = useMemo(() => {
     const target = normalize(config.setting);
     const match = modelGroups.settings.find((m) => normalize(m.name) === target || normalize(m.key) === target);
     return match?.url || modelGroups.settings[0]?.url;
-  })();
-  const priceDetails = [ { label: 'Base Metal', value: config.material, price: '+$2,450' }, { label: 'Center Stone', value: `${config.gemstone} 1.5ct`, price: '+$10,800' }, { label: 'Band Style', value: config.bandStyle, price: '+$850' }, { label: 'Craftsmanship', value: `${config.texture} Finish`, price: 'Included' }, ];
+  }, [config.setting]);
+
+  const modelViewerRef = useRef(null);
+
+  useEffect(() => {
+    const mv = modelViewerRef.current;
+    if (!mv) return;
+    const props = MATERIAL_CONFIGS[config.material];
+    if (!props) return;
+
+    const apply = () => {
+      const mats = mv.model?.materials;
+      if (!mats?.length) return;
+      mats.forEach((mat) => {
+        const pbr = mat.pbrMetallicRoughness;
+        if (!pbr) return;
+        pbr.setBaseColorFactor(props.color);
+        pbr.setMetallicFactor(props.metallic);
+        pbr.setRoughnessFactor(props.roughness);
+      });
+    };
+
+    mv.addEventListener('load', apply);
+    apply();
+    return () => mv.removeEventListener('load', apply);
+  }, [config.material, settingModelUrl]);
+
+  const priceDetails = [
+    { label: 'Base Metal', value: config.material, price: '+$2,450' },
+    { label: 'Center Stone', value: `${config.gemstone} 1.5ct`, price: '+$10,800' },
+    { label: 'Band Style', value: config.bandStyle, price: '+$850' },
+    { label: 'Craftsmanship', value: `${config.texture} Finish`, price: 'Included' },
+  ];
   const widthScale = (config.width / 2.5).toFixed(3);
 
   return (
     <div className="h-screen flex flex-col bg-white font-['Manrope'] overflow-hidden text-[#1a1a1a]">
-      {/* ... (Toàn bộ phần Header và Body Container GIỮ NGUYÊN) ... */}
       <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
@@ -73,10 +127,8 @@ const DesignStudio = () => {
       </header>
 
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* ASIDE TRÁI VÀ MAIN PHẢI GIỮ NGUYÊN CODE CỦA BẠN */}
         <aside className="w-[400px] border-r border-gray-100 bg-white overflow-y-auto no-scrollbar p-8 shrink-0 h-full">
-            {/* ... Nội dung Sidebar giữ nguyên ... */}
-            <div className="mb-8">
+          <div className="mb-8">
             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#b08d26] mb-1">Configuration</h2>
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Master Piece #4491</p>
           </div>
@@ -176,8 +228,7 @@ const DesignStudio = () => {
         </aside>
 
         <main className="flex-1 bg-[#fcfcfc] overflow-y-auto no-scrollbar relative flex flex-col h-full">
-            {/* ... Nội dung Render 3D giữ nguyên ... */}
-            <div className="sticky top-8 flex justify-center z-20 pointer-events-none shrink-0">
+          <div className="sticky top-8 flex justify-center z-20 pointer-events-none shrink-0">
             <div className="bg-white/90 backdrop-blur px-5 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-3">
                <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
                <span className="text-[9px] font-black uppercase tracking-widest">Render: Ultra-High</span>
@@ -195,27 +246,23 @@ const DesignStudio = () => {
                   borderRadius: '20px',
                   overflow: 'hidden',
                 }}>
-                  {settings.map((s) => s.url && (
-                    <model-viewer
-                      key={s.url}
-                      src={s.url}
-                      camera-controls
-                      auto-rotate
-                      shadow-intensity="2"
-                      exposure="1.2"
-                      background-color="#0f0e0c"
-                      scale={`1 ${widthScale} 1`}
-                      style={{
-                        position: 'absolute',
-                        top: '50%', left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: '50%', height: '50%',
-                        opacity: normalize(s.name) === normalize(config.setting) ? 1 : 0,
-                        pointerEvents: normalize(s.name) === normalize(config.setting) ? 'auto' : 'none',
-                        transition: 'opacity 0.15s',
-                      }}
-                    />
-                  ))}
+                  <model-viewer
+                    ref={modelViewerRef}
+                    key={settingModelUrl}
+                    src={settingModelUrl}
+                    camera-controls
+                    auto-rotate
+                    shadow-intensity="2"
+                    exposure="1.2"
+                    background-color="#0f0e0c"
+                    scale={`1 ${widthScale} 1`}
+                    style={{
+                      position: 'absolute',
+                      top: '50%', left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '50%', height: '50%',
+                    }}
+                  />
                 </div>
               ) : (
                 <img alt="Ring" className="max-h-[50vh] object-contain drop-shadow-2xl" src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=1000" />
@@ -262,9 +309,8 @@ const DesignStudio = () => {
         </main>
       </div>
 
-      {/* --- PHẦN FIX LỖI: CHỈ HIỆN KHI TRỎ VÀO BUTTON --- */}
       <div className="fixed bottom-0 left-0 right-0 z-[150]">
-        <div 
+        <div
           className={`bg-white/95 backdrop-blur-xl border-t border-gray-100 px-12 py-12 transition-all duration-500 transform shadow-[0_-30px_60px_rgba(0,0,0,0.12)] ${showPriceBreakdown ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}
           onMouseEnter={() => setShowPriceBreakdown(true)}
           onMouseLeave={() => setShowPriceBreakdown(false)}
@@ -292,11 +338,11 @@ const DesignStudio = () => {
               </div>
             </div>
           </div>
-          
-          <button 
+
+          <button
             onMouseEnter={() => setShowPriceBreakdown(true)}
             onMouseLeave={() => setShowPriceBreakdown(false)}
-            onClick={() => navigate('/product-detail')} // 3. Thêm sự kiện onClick để chuyển trang
+            onClick={() => navigate('/product-detail')}
             className="bg-[#b08d26] text-white px-12 py-5 rounded-xl font-black uppercase text-[11px] tracking-[0.3em] flex items-center gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10"
           >
             Proceed to Purchase <span className="material-symbols-outlined text-base">arrow_forward</span>
