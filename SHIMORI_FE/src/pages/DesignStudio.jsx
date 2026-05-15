@@ -1,7 +1,8 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '@google/model-viewer';
 import { modelGroups } from '../models';
+import JewelryViewer from '../components/JewelryViewer';
 
 const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -76,30 +77,11 @@ const DesignStudio = () => {
     return match?.url || modelGroups.settings[0]?.url;
   }, [config.setting]);
 
-  const modelViewerRef = useRef(null);
+  const gemModelUrl = useMemo(() => {
+    const target = normalize(config.gemstone);
+    return modelGroups.gems.find((g) => normalize(g.name) === target || normalize(g.key) === target)?.url;
+  }, [config.gemstone]);
 
-  useEffect(() => {
-    const mv = modelViewerRef.current;
-    if (!mv) return;
-    const props = MATERIAL_CONFIGS[config.material];
-    if (!props) return;
-
-    const apply = () => {
-      const mats = mv.model?.materials;
-      if (!mats?.length) return;
-      mats.forEach((mat) => {
-        const pbr = mat.pbrMetallicRoughness;
-        if (!pbr) return;
-        pbr.setBaseColorFactor(props.color);
-        pbr.setMetallicFactor(props.metallic);
-        pbr.setRoughnessFactor(props.roughness);
-      });
-    };
-
-    mv.addEventListener('load', apply);
-    apply();
-    return () => mv.removeEventListener('load', apply);
-  }, [config.material, settingModelUrl]);
 
   const priceDetails = [
     { label: 'Base Metal', value: config.material, price: '+$2,450' },
@@ -176,11 +158,23 @@ const DesignStudio = () => {
           </SidebarSection>
 
           <SidebarSection step="03" title="Primary Gemstone">
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3">
               {gemstones.map((g) => (
                 <button key={g.name} onClick={() => setConfig({...config, gemstone: g.name})}
-                  className={`w-12 h-12 rounded-full border-2 p-0.5 transition-all ${config.gemstone === g.name ? 'border-[#b08d26]' : 'border-transparent'}`}>
-                  <div className={`w-full h-full rounded-full ${g.color} shadow-sm border border-gray-100`}></div>
+                  className={`flex flex-col items-center gap-1.5 p-1 rounded-xl border-2 transition-all ${config.gemstone === g.name ? 'border-[#b08d26] bg-[#b08d26]/5' : 'border-transparent hover:border-gray-200'}`}>
+                  {g.url ? (
+                    <model-viewer
+                      src={g.url}
+                      auto-rotate
+                      rotation-per-second="30deg"
+                      exposure="1.4"
+                      shadow-intensity="0"
+                      style={{ width: '48px', height: '48px', background: 'transparent', pointerEvents: 'none' }}
+                    />
+                  ) : (
+                    <div className={`w-12 h-12 rounded-full ${g.color} shadow-sm border border-gray-100`} />
+                  )}
+                  <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">{g.label}</span>
                 </button>
               ))}
             </div>
@@ -237,36 +231,14 @@ const DesignStudio = () => {
 
           <div className="flex-1 flex flex-col items-center justify-center p-10 min-h-[600px] shrink-0">
             <div className="relative group flex flex-col items-center">
-              {settingModelUrl ? (
-                <div style={{
-                  position: 'relative',
-                  width: 'min(70vw, 900px)',
-                  height: 'min(70vw, 600px)',
-                  background: 'radial-gradient(ellipse at center, #2a2520 0%, #0f0e0c 100%)',
-                  borderRadius: '20px',
-                  overflow: 'hidden',
-                }}>
-                  <model-viewer
-                    ref={modelViewerRef}
-                    key={settingModelUrl}
-                    src={settingModelUrl}
-                    camera-controls
-                    auto-rotate
-                    shadow-intensity="2"
-                    exposure="1.2"
-                    background-color="#0f0e0c"
-                    scale={`1 ${widthScale} 1`}
-                    style={{
-                      position: 'absolute',
-                      top: '50%', left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '50%', height: '50%',
-                    }}
-                  />
-                </div>
-              ) : (
-                <img alt="Ring" className="max-h-[50vh] object-contain drop-shadow-2xl" src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=1000" />
-              )}
+              <div style={{ width: 'min(70vw, 900px)', height: 'min(70vw, 600px)' }}>
+                <JewelryViewer
+                  ringUrl={settingModelUrl}
+                  gemUrl={gemModelUrl}
+                  materialProps={MATERIAL_CONFIGS[config.material]}
+                  ringWidthScale={parseFloat(widthScale)}
+                />
+              </div>
               <div className="mt-8 flex flex-col items-center gap-2">
                 <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100 cursor-pointer">
                   <span className="material-symbols-outlined text-[#b08d26]">open_with</span>
@@ -276,7 +248,6 @@ const DesignStudio = () => {
             </div>
           </div>
 
-          {/* Quick Presets */}
           <div className="bg-white border-t border-gray-100 px-10 py-8 flex gap-8 shrink-0 overflow-x-auto no-scrollbar">
             <div className="shrink-0 border-r border-gray-100 pr-8 flex flex-col justify-center">
                <p className="text-[9px] font-black text-[#b08d26] uppercase tracking-widest mb-1">Quick Presets</p>
@@ -293,7 +264,6 @@ const DesignStudio = () => {
             </div>
           </div>
 
-          {/* Engine Footer */}
           <div className="bg-white border-t border-gray-50 py-5 px-10 flex items-center justify-between text-[9px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
             <div className="flex gap-8">
               <span className="flex items-center gap-2 text-[#00c853] font-black"><div className="w-1.5 h-1.5 rounded-full bg-[#00c853]"></div> Engine Active</span>

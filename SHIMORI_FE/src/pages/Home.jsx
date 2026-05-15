@@ -1,36 +1,9 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import { PRODUCTS } from '../data/products';
 
 const Home = () => {
   const navigate = useNavigate();
-
-  // Dữ liệu mẫu cho Collection
-  const collections = [
-    {
-      id: 1,
-      title: "The Solitaire Collection",
-      price: "$1,200",
-      image: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=2070"
-    },
-    {
-      id: 2,
-      title: "Royal Halo Series",
-      price: "$2,500",
-      image: "https://lirysjewelry.com/cdn/shop/files/halo.webp?v=1731698776&width=500"
-    },
-    {
-      id: 3,
-      title: "Vintage Eternity",
-      price: "$1,850",
-      image: "https://erstwhilejewelry.com/cdn/shop/files/art-deco-2-carat-old-mine-cut-diamond-vintage-eternity-band-size-6-25-1127732633.png?v=1756479104&width=768"
-    },
-    {
-      id: 4,
-      title: "Modern Minimalist",
-      price: "$950",
-      image: "https://mjjewels.com/21117-large_default/diamond-solitaire-modern-minimalist-engagement-ring.jpg"
-    }
-  ];
 
   const steps = [
     { icon: "token", title: "Select", desc: "Choose your base metal and stone type." },
@@ -41,91 +14,19 @@ const Home = () => {
 
   return (
     <div className="bg-white text-slate-900 font-['Manrope'] min-h-screen flex flex-col">
-      <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-
-      {/* --- HEADER THIẾT KẾ THEO ẢNH --- */}
-      <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 sticky top-0 z-[100] shadow-sm">
-        <div className="flex items-center gap-12">
-          {/* Logo */}
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
-            <span className="material-symbols-outlined text-2xl">diamond</span>
-            <h2 className="text-xl font-extrabold tracking-tighter uppercase">SHIMORI</h2>
-          </div>
-
-          {/* Menu */}
-          <nav className="hidden lg:flex items-center gap-8">
-            {[
-              { label: 'Collections', id: 'collections' },
-              { label: 'Process', id: 'process' },
-              { label: 'About', id: 'about' }
-            ].map((item) => (
-              <a 
-                key={item.id}
-                href={`#${item.id}`}
-                onClick={(e) => {
-                  e.preventDefault();
-                  const element = document.getElementById(item.id);
-                  if (element) {
-                    element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }
-                }}
-                className="text-[11px] font-black uppercase tracking-widest text-gray-500 hover:text-black transition-colors cursor-pointer"
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-6 flex-1 justify-end max-w-2xl">
-          {/* Search Bar */}
-          <div className="relative flex-1 max-w-xs">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">search</span>
-            <input 
-              type="text" 
-              placeholder="Find your style..." 
-              className="w-full bg-gray-50 border-none rounded-full py-2.5 pl-11 pr-4 text-xs font-medium focus:ring-2 focus:ring-[#facc15]/50 outline-none transition-all"
-            />
-          </div>
-
-          {/* Action Buttons */}
-          <button 
-            onClick={() => navigate('/design')}
-            className="bg-[#facc15] text-black px-6 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all shadow-md"
-          >
-            Design Now
-          </button>
-
-          <Link 
-            to="/login"
-            className="text-black px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:text-[#facc15] transition-all"
-          >
-            Sign In
-          </Link>
-
-          <div className="flex items-center gap-4 text-gray-400">
-            <span className="material-symbols-outlined cursor-pointer hover:text-black transition-colors">favorite</span>
-            <div className="relative">
-              <span className="material-symbols-outlined cursor-pointer hover:text-black transition-colors">shopping_bag</span>
-              <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold">1</span>
-            </div>
-            <span className="material-symbols-outlined cursor-pointer hover:text-black transition-colors">person</span>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* --- HERO SECTION --- */}
       <section className="relative w-full h-[85vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img 
-            alt="High-resolution cinematic shot" 
-            className="w-full h-full object-cover scale-105 animate-slow-zoom" 
-            src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=2070&auto=format&fit=crop" 
+          <img
+            alt="High-resolution cinematic shot"
+            className="w-full h-full object-cover scale-105 animate-slow-zoom"
+            src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=2070&auto=format&fit=crop"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70"></div>
         </div>
-        
+
         <div className="relative z-20 max-w-5xl px-4 text-center">
           <h1 className="text-white text-5xl md:text-[90px] font-extrabold leading-[1] tracking-tighter mb-8 drop-shadow-2xl">
             Custom Jewelry <br />
@@ -135,7 +36,7 @@ const Home = () => {
             Experience the art of 3D jewelry design. Craft a piece as unique as your journey with our immersive high-definition studio.
           </p>
           <div className="flex flex-col sm:flex-row gap-5 justify-center">
-            <button 
+            <button
               onClick={() => navigate('/design')}
               className="bg-[#facc15] hover:bg-white text-black px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-widest shadow-2xl transition-all hover:-translate-y-1"
             >
@@ -159,13 +60,13 @@ const Home = () => {
             Shop All Collections <span className="material-symbols-outlined">arrow_right_alt</span>
           </button>
         </div>
-        
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
-          {collections.map((item) => (
-            <div key={item.id} className="group cursor-pointer">
+          {PRODUCTS.map((item) => (
+            <div key={item.id} className="group cursor-pointer" onClick={() => navigate(`/product-detail/${item.id}`)}>
               <div className="relative aspect-[4/5] overflow-hidden rounded-3xl mb-6 shadow-xl bg-gray-50 border border-gray-100">
                 <img alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src={item.image} />
-                <button 
+                <button
                    onClick={(e) => { e.stopPropagation(); navigate('/design'); }}
                    className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-black uppercase px-6 py-3 rounded-full opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all"
                 >
@@ -214,9 +115,9 @@ const Home = () => {
             </button>
           </div>
           <div className="relative">
-            <img 
-              src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1000&auto=format&fit=crop" 
-              alt="About SHIMORI" 
+            <img
+              src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1000&auto=format&fit=crop"
+              alt="About SHIMORI"
               className="rounded-3xl shadow-2xl"
             />
             <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-[#facc15]/20 rounded-full blur-3xl"></div>
