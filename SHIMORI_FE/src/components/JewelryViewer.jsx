@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useEffect, useState, useRef } from 'react';
+import { Suspense, useMemo, useEffect, useState, useRef, memo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { useGLTF, OrbitControls, Environment } from '@react-three/drei';
 import * as THREE from 'three';
@@ -193,7 +193,7 @@ function Loader() {
   );
 }
 
-export default function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidthScale }) {
+function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidthScale }) {
   if (!ringUrl) return null;
 
   return (
@@ -216,3 +216,5 @@ export default function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidt
     </div>
   );
 }
+
+export default memo(JewelryViewer);

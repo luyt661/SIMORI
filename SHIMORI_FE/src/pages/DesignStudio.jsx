@@ -1,10 +1,45 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import '@google/model-viewer';
 import { modelGroups } from '../models';
 import JewelryViewer from '../components/JewelryViewer';
 
 const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Giá bạc: fetch real-time từ Coinbase (XAG = silver, USD/troy oz)
+// Nhẫn bạc ~8g, markup 4x cho fine jewelry craftsmanship
+const SILVER_RING_GRAMS = 8;
+const SILVER_MARKUP = 4;
+const TROY_OZ_TO_GRAMS = 31.1035;
+const SILVER_FALLBACK_OZ = 33.0; // fallback nếu API lỗi (USD/oz)
+
+// Giá tĩnh — cập nhật định kỳ theo thị trường
+const PRICES = {
+  material: {
+    'Titan': 1_200,       // industrial titanium + craftsmanship
+    'Sắt không gỉ': 550,  // stainless steel + craftsmanship
+    // 'Bạc': tính động từ live silver price
+  },
+  gemstone: {
+    'Diamond': 10_800,
+    'Sapphire': 4_500,
+    'Ruby': 5_200,
+    'Emerald': 3_800,
+    'Amethyst': 1_200,
+    'Topaz': 900,
+    'Green Emerald': 4_200,
+  },
+  bandStyle: {
+    'Plain': 400,
+    'Pavé': 850,
+    'Eternity': 1_200,
+    'Twisted': 650,
+    'Milgrain': 750,
+    'Split Shank': 900,
+  },
+  craftsmanship: 500,
+};
 
 const MATERIAL_CONFIGS = {
   'Titan':         { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40, displayColor: 'from-[#374151] to-[#6b7280]' },
@@ -12,7 +47,6 @@ const MATERIAL_CONFIGS = {
   'Sắt không gỉ': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20, displayColor: 'from-[#52525b] to-[#a1a1aa]' },
 };
 
-const textures = ['Polished', 'Brushed', 'Hammered', 'Matte', 'Diamond-Cut'];
 
 const fallbackSettings = [
   { name: 'Prong', icon: 'diamond' },
@@ -68,8 +102,49 @@ const DesignStudio = () => {
     gemstone: 'Diamond',
     bandStyle: 'Plain',
     width: 2.5,
-    texture: 'Polished'
   });
+
+  const [silverPriceOz, setSilverPriceOz] = useState(null);
+  const [priceSource, setPriceSource] = useState('loading'); // 'live' | 'estimated'
+
+  useEffect(() => {
+    axios.get('https://api.coinbase.com/v2/exchange-rates?currency=XAG')
+      .then((res) => {
+        const usdPerOz = parseFloat(res.data?.data?.rates?.USD);
+        if (usdPerOz > 0) {
+          setSilverPriceOz(usdPerOz);
+          setPriceSource('live');
+        } else {
+          setSilverPriceOz(SILVER_FALLBACK_OZ);
+          setPriceSource('estimated');
+        }
+      })
+      .catch(() => {
+        setSilverPriceOz(SILVER_FALLBACK_OZ);
+        setPriceSource('estimated');
+      });
+  }, []);
+
+  const silverMaterialPrice = useMemo(() => {
+    if (!silverPriceOz) return null;
+    return Math.round((silverPriceOz / TROY_OZ_TO_GRAMS) * SILVER_RING_GRAMS * SILVER_MARKUP);
+  }, [silverPriceOz]);
+
+  const priceDetails = useMemo(() => {
+    const matPrice = config.material === 'Bạc'
+      ? silverMaterialPrice
+      : (PRICES.material[config.material] ?? 0);
+    return [
+      { label: 'Base Metal',    value: config.material,             price: matPrice,                                    isLive: config.material === 'Bạc' && priceSource === 'live' },
+      { label: 'Center Stone',  value: `${config.gemstone} 1.5ct`, price: PRICES.gemstone[config.gemstone] ?? 0,       isLive: false },
+      { label: 'Band Style',    value: config.bandStyle,            price: PRICES.bandStyle[config.bandStyle] ?? 0,     isLive: false },
+      { label: 'Craftsmanship', value: 'Handcrafted',               price: PRICES.craftsmanship,                       isLive: false },
+    ];
+  }, [config, silverMaterialPrice, priceSource]);
+
+  const totalPrice = useMemo(() =>
+    priceDetails.reduce((sum, item) => sum + (item.price ?? 0), 0),
+  [priceDetails]);
 
   const settingModelUrl = useMemo(() => {
     const target = normalize(config.setting);
@@ -83,13 +158,11 @@ const DesignStudio = () => {
   }, [config.gemstone]);
 
 
-  const priceDetails = [
-    { label: 'Base Metal', value: config.material, price: '+$2,450' },
-    { label: 'Center Stone', value: `${config.gemstone} 1.5ct`, price: '+$10,800' },
-    { label: 'Band Style', value: config.bandStyle, price: '+$850' },
-    { label: 'Craftsmanship', value: `${config.texture} Finish`, price: 'Included' },
-  ];
   const widthScale = (config.width / 2.5).toFixed(3);
+
+  const materialProps = useMemo(() => {
+    return MATERIAL_CONFIGS[config.material] ?? null;
+  }, [config.material]);
 
   return (
     <div className="h-screen flex flex-col bg-white font-['Manrope'] overflow-hidden text-[#1a1a1a]">
@@ -134,9 +207,13 @@ const DesignStudio = () => {
             <div className="grid grid-cols-3 gap-2">
               {settings.map((s) => (
                 <button key={s.name} onClick={() => setConfig({...config, setting: s.name})}
-                  className={`flex flex-col items-center justify-center p-4 border rounded transition-all ${config.setting === s.name ? 'border-[#b08d26] bg-[#b08d26]/5' : 'border-gray-100 hover:border-gray-200'}`}>
-                  <span className={`material-symbols-outlined text-xl mb-2 ${config.setting === s.name ? 'text-[#b08d26]' : 'text-gray-300'}`}>{s.icon}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest">{s.name}</span>
+                  className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-200 ${
+                    config.setting === s.name
+                      ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20 scale-[1.03]'
+                      : 'border border-gray-100 hover:border-gray-300 hover:bg-gray-50'
+                  }`}>
+                  <span className={`material-symbols-outlined text-2xl mb-2 transition-colors ${config.setting === s.name ? 'text-[#b08d26]' : 'text-gray-300'}`}>{s.icon}</span>
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${config.setting === s.name ? 'text-[#b08d26]' : 'text-gray-400'}`}>{s.name}</span>
                 </button>
               ))}
             </div>
@@ -146,12 +223,19 @@ const DesignStudio = () => {
             <div className="space-y-2">
               {materials.map((m) => (
                 <button key={m.name} onClick={() => setConfig({...config, material: m.name})}
-                  className={`w-full flex items-center justify-between p-4 border rounded ${config.material === m.name ? 'border-[#b08d26] bg-[#b08d26]/5' : 'border-gray-100 hover:border-gray-200'}`}>
+                  className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${
+                    config.material === m.name
+                      ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20'
+                      : 'border border-gray-100 hover:border-gray-300 hover:bg-gray-50'
+                  }`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-5 h-5 rounded-full bg-gradient-to-tr ${m.color} border border-gray-100`}></div>
-                    <span className="text-[10px] font-black uppercase">{m.name}</span>
+                    <div className={`w-6 h-6 rounded-full bg-gradient-to-tr ${m.color} shadow-sm`}></div>
+                    <span className={`text-[10px] font-black uppercase tracking-wide ${config.material === m.name ? 'text-[#b08d26]' : 'text-gray-700'}`}>{m.name}</span>
                   </div>
-                  {config.material === m.name && <span className="material-symbols-outlined text-[#b08d26] text-lg">check_circle</span>}
+                  {config.material === m.name
+                    ? <span className="material-symbols-outlined text-[#b08d26] text-lg">check_circle</span>
+                    : <span className="material-symbols-outlined text-gray-200 text-lg">radio_button_unchecked</span>
+                  }
                 </button>
               ))}
             </div>
@@ -161,7 +245,11 @@ const DesignStudio = () => {
             <div className="flex flex-wrap gap-3">
               {gemstones.map((g) => (
                 <button key={g.name} onClick={() => setConfig({...config, gemstone: g.name})}
-                  className={`flex flex-col items-center gap-1.5 p-1 rounded-xl border-2 transition-all ${config.gemstone === g.name ? 'border-[#b08d26] bg-[#b08d26]/5' : 'border-transparent hover:border-gray-200'}`}>
+                  className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all duration-200 ${
+                    config.gemstone === g.name
+                      ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20 scale-[1.05]'
+                      : 'border-2 border-transparent hover:border-gray-200 hover:bg-gray-50'
+                  }`}>
                   {g.url ? (
                     <model-viewer
                       src={g.url}
@@ -174,7 +262,7 @@ const DesignStudio = () => {
                   ) : (
                     <div className={`w-12 h-12 rounded-full ${g.color} shadow-sm border border-gray-100`} />
                   )}
-                  <span className="text-[8px] font-black uppercase tracking-widest text-gray-500">{g.label}</span>
+                  <span className={`text-[8px] font-black uppercase tracking-widest ${config.gemstone === g.name ? 'text-[#b08d26]' : 'text-gray-400'}`}>{g.label}</span>
                 </button>
               ))}
             </div>
@@ -184,7 +272,11 @@ const DesignStudio = () => {
             <div className="grid grid-cols-2 gap-2">
               {bandStyles.map((style) => (
                 <button key={style} onClick={() => setConfig({...config, bandStyle: style})}
-                  className={`py-3 border rounded text-[9px] font-black uppercase tracking-widest transition-all ${config.bandStyle === style ? 'border-[#b08d26] text-[#b08d26] bg-[#b08d26]/5' : 'border-gray-100 text-gray-400'}`}>
+                  className={`py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${
+                    config.bandStyle === style
+                      ? 'border-2 border-[#b08d26] text-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20'
+                      : 'border border-gray-100 text-gray-400 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-600'
+                  }`}>
                   {style}
                 </button>
               ))}
@@ -207,17 +299,6 @@ const DesignStudio = () => {
             />
           </SidebarSection>
 
-          <SidebarSection step="06" title="Surface Texture">
-            <div className="space-y-2">
-              {textures.map((t) => (
-                <button key={t} onClick={() => setConfig({...config, texture: t})}
-                  className={`w-full flex items-center justify-between p-4 border rounded transition-all ${config.texture === t ? 'border-[#b08d26] text-[#b08d26] bg-[#b08d26]/5' : 'border-gray-100 text-gray-400'}`}>
-                  <span className="text-[10px] font-black uppercase tracking-widest">{t}</span>
-                  <div className={`w-2 h-2 rounded-full ${config.texture === t ? 'bg-[#b08d26]' : 'bg-gray-200'}`}></div>
-                </button>
-              ))}
-            </div>
-          </SidebarSection>
           <div className="h-40"></div>
         </aside>
 
@@ -235,7 +316,7 @@ const DesignStudio = () => {
                 <JewelryViewer
                   ringUrl={settingModelUrl}
                   gemUrl={gemModelUrl}
-                  materialProps={MATERIAL_CONFIGS[config.material]}
+                  materialProps={materialProps}
                   ringWidthScale={parseFloat(widthScale)}
                 />
               </div>
@@ -288,10 +369,22 @@ const DesignStudio = () => {
           <div className="max-w-7xl mx-auto grid grid-cols-4 gap-16">
             {priceDetails.map((item, idx) => (
               <div key={idx}>
-                <p className="text-[10px] font-black text-gray-400 uppercase mb-4 tracking-widest">{item.label}</p>
+                <div className="flex items-center gap-2 mb-4">
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.label}</p>
+                  {item.isLive && (
+                    <span className="text-[8px] font-black uppercase tracking-wider text-green-600 bg-green-50 px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse inline-block"></span>Live
+                    </span>
+                  )}
+                  {!item.isLive && item.label !== 'Craftsmanship' && (
+                    <span className="text-[8px] font-black uppercase tracking-wider text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Est.</span>
+                  )}
+                </div>
                 <div className="flex justify-between items-end border-b-2 border-gray-100 pb-4">
                   <span className="text-[14px] font-black uppercase text-gray-800 tracking-tight">{item.value}</span>
-                  <span className="text-[14px] font-black text-[#b08d26]">{item.price}</span>
+                  <span className="text-[14px] font-black text-[#b08d26]">
+                    {item.price == null ? '...' : `$${item.price.toLocaleString()}`}
+                  </span>
                 </div>
               </div>
             ))}
@@ -303,7 +396,9 @@ const DesignStudio = () => {
             <div className="flex flex-col">
               <p className="text-[9px] font-black uppercase text-gray-400 mb-1 flex items-center gap-2">Total <span className="material-symbols-outlined text-[13px]">info</span></p>
               <div className="flex items-baseline gap-4">
-                <h3 className="text-3xl font-black tracking-tighter text-black">$14,250.00</h3>
+                <h3 className="text-3xl font-black tracking-tighter text-black">
+                  {priceSource === 'loading' ? '...' : `$${totalPrice.toLocaleString()}`}
+                </h3>
                 <span className="text-[9px] text-green-600 font-black bg-green-50 px-2 py-1 rounded uppercase tracking-wider">In Stock</span>
               </div>
             </div>
