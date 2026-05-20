@@ -29,6 +29,17 @@ function RingModel({ url, materialProps, widthScale }) {
   }, [scene]);
 
   useEffect(() => {
+    return () => {
+      cloned.traverse((child) => {
+        if (!child.isMesh) return;
+        child.geometry?.dispose();
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach((m) => m?.dispose());
+      });
+    };
+  }, [cloned]);
+
+  useEffect(() => {
     if (!materialProps) return;
     const [r, g, b] = materialProps.color;
     cloned.traverse((child) => {
@@ -79,6 +90,17 @@ function GemModel({ url, ringRef }) {
   const [transform, setTransform] = useState(null);
 
   useEffect(() => {
+    return () => {
+      cloned.traverse((child) => {
+        if (!child.isMesh) return;
+        child.geometry?.dispose();
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach((m) => m?.dispose());
+      });
+    };
+  }, [cloned]);
+
+  useEffect(() => {
     const compute = () => {
       if (!ringRef.current) return null;
       ringRef.current.updateMatrixWorld(true);
@@ -111,9 +133,6 @@ function GemModel({ url, ringRef }) {
       const posY = prong.y - overlap - gemBox.min.y * s;
       const posX = prong.x - gemCenter.x * s;
       const posZ = prong.z - gemCenter.z * s;
-
-      console.log(`[GEM] prong tip world: (${prong.x.toFixed(2)}, ${prong.y.toFixed(2)}, ${prong.z.toFixed(2)})`);
-      console.log(`[GEM] s=${s.toFixed(3)} pos=(${posX.toFixed(2)}, ${posY.toFixed(2)}, ${posZ.toFixed(2)})`);
 
       return { position: [posX, posY, posZ], scale: s };
     };
@@ -207,7 +226,9 @@ function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidthScale }) {
       <Canvas
         camera={{ position: [0, 2, 5], fov: 35 }}
         shadows
-        gl={{ antialias: true, alpha: true }}
+        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        dpr={[1, 1.5]}
+        performance={{ min: 0.5 }}
       >
         <Suspense fallback={<Loader />}>
           <Scene ringUrl={ringUrl} gemUrl={gemUrl} materialProps={materialProps} ringWidthScale={ringWidthScale} />

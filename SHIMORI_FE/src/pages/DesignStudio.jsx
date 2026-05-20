@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import '@google/model-viewer';
 import { modelGroups } from '../models';
 import JewelryViewer from '../components/JewelryViewer';
 
@@ -127,18 +126,20 @@ const DesignStudio = () => {
 
   const silverMaterialPrice = useMemo(() => {
     if (!silverPriceOz) return null;
-    return Math.round((silverPriceOz / TROY_OZ_TO_GRAMS) * SILVER_RING_GRAMS * SILVER_MARKUP);
-  }, [silverPriceOz]);
+    const weightG = SILVER_RING_GRAMS * (config.width / 2.5);
+    return Math.round((silverPriceOz / TROY_OZ_TO_GRAMS) * weightG * SILVER_MARKUP);
+  }, [silverPriceOz, config.width]);
 
   const priceDetails = useMemo(() => {
-    const matPrice = config.material === 'Bạc'
+    const widthMultiplier = config.width / 2.5;
+    const baseMatPrice = config.material === 'Bạc'
       ? silverMaterialPrice
-      : (PRICES.material[config.material] ?? 0);
+      : Math.round((PRICES.material[config.material] ?? 0) * widthMultiplier);
     return [
-      { label: 'Base Metal',    value: config.material,             price: matPrice,                                    isLive: config.material === 'Bạc' && priceSource === 'live' },
-      { label: 'Center Stone',  value: `${config.gemstone} 1.5ct`, price: PRICES.gemstone[config.gemstone] ?? 0,       isLive: false },
-      { label: 'Band Style',    value: config.bandStyle,            price: PRICES.bandStyle[config.bandStyle] ?? 0,     isLive: false },
-      { label: 'Craftsmanship', value: 'Handcrafted',               price: PRICES.craftsmanship,                       isLive: false },
+      { label: 'Base Metal',    value: `${config.material} · ${config.width}mm`,  price: baseMatPrice,                                    isLive: config.material === 'Bạc' && priceSource === 'live' },
+      { label: 'Center Stone',  value: config.gemstone,                            price: PRICES.gemstone[config.gemstone] ?? 0,           isLive: false },
+      { label: 'Band Style',    value: config.bandStyle,                           price: PRICES.bandStyle[config.bandStyle] ?? 0,         isLive: false },
+      { label: 'Craftsmanship', value: 'Handcrafted',                              price: PRICES.craftsmanship,                            isLive: false },
     ];
   }, [config, silverMaterialPrice, priceSource]);
 
@@ -158,7 +159,7 @@ const DesignStudio = () => {
   }, [config.gemstone]);
 
 
-  const widthScale = (config.width / 2.5).toFixed(3);
+  const widthScale = useMemo(() => parseFloat((config.width / 2.5).toFixed(3)), [config.width]);
 
   const materialProps = useMemo(() => {
     return MATERIAL_CONFIGS[config.material] ?? null;
@@ -166,9 +167,6 @@ const DesignStudio = () => {
 
   return (
     <div className="h-screen flex flex-col bg-white font-['Manrope'] overflow-hidden text-[#1a1a1a]">
-      <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-
       <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-8 shrink-0 z-[130]">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
           <span className="material-symbols-outlined text-2xl">diamond</span>
@@ -250,18 +248,7 @@ const DesignStudio = () => {
                       ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20 scale-[1.05]'
                       : 'border-2 border-transparent hover:border-gray-200 hover:bg-gray-50'
                   }`}>
-                  {g.url ? (
-                    <model-viewer
-                      src={g.url}
-                      auto-rotate
-                      rotation-per-second="30deg"
-                      exposure="1.4"
-                      shadow-intensity="0"
-                      style={{ width: '48px', height: '48px', background: 'transparent', pointerEvents: 'none' }}
-                    />
-                  ) : (
-                    <div className={`w-12 h-12 rounded-full ${g.color} shadow-sm border border-gray-100`} />
-                  )}
+                  <div className={`w-12 h-12 rounded-full ${g.color || 'bg-gray-200'} shadow-sm border border-gray-100`} />
                   <span className={`text-[8px] font-black uppercase tracking-widest ${config.gemstone === g.name ? 'text-[#b08d26]' : 'text-gray-400'}`}>{g.label}</span>
                 </button>
               ))}
@@ -360,9 +347,9 @@ const DesignStudio = () => {
         </main>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-[150]">
+      <div className="fixed bottom-0 left-0 right-0 z-[150] pointer-events-none">
         <div
-          className={`bg-white/95 backdrop-blur-xl border-t border-gray-100 px-12 py-12 transition-all duration-500 transform shadow-[0_-30px_60px_rgba(0,0,0,0.12)] ${showPriceBreakdown ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}
+          className={`pointer-events-auto bg-white/95 backdrop-blur-xl border-t border-gray-100 px-12 py-12 transition-all duration-500 transform shadow-[0_-30px_60px_rgba(0,0,0,0.12)] ${showPriceBreakdown ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}
           onMouseEnter={() => setShowPriceBreakdown(true)}
           onMouseLeave={() => setShowPriceBreakdown(false)}
         >
@@ -391,7 +378,7 @@ const DesignStudio = () => {
           </div>
         </div>
 
-        <div className="h-28 bg-white border-t border-gray-100 flex items-center justify-between px-12 relative shadow-lg">
+        <div className="pointer-events-auto h-28 bg-white border-t border-gray-100 flex items-center justify-between px-12 relative shadow-lg">
           <div className="flex gap-16 items-center">
             <div className="flex flex-col">
               <p className="text-[9px] font-black uppercase text-gray-400 mb-1 flex items-center gap-2">Total <span className="material-symbols-outlined text-[13px]">info</span></p>
@@ -407,7 +394,7 @@ const DesignStudio = () => {
           <button
             onMouseEnter={() => setShowPriceBreakdown(true)}
             onMouseLeave={() => setShowPriceBreakdown(false)}
-            onClick={() => navigate('/product-detail')}
+            onClick={() => navigate('/product-detail/1')}
             className="bg-[#b08d26] text-white px-12 py-5 rounded-xl font-black uppercase text-[11px] tracking-[0.3em] flex items-center gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10"
           >
             Proceed to Purchase <span className="material-symbols-outlined text-base">arrow_forward</span>
@@ -415,11 +402,6 @@ const DesignStudio = () => {
         </div>
       </div>
 
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: #b08d26; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-      `}</style>
     </div>
   );
 };

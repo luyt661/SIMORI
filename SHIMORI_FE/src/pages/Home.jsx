@@ -22,7 +22,7 @@ const Home = () => {
           <img
             alt="High-resolution cinematic shot"
             className="w-full h-full object-cover scale-105 animate-slow-zoom"
-            src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=80&w=2070&auto=format&fit=crop"
+            src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=70&w=1200&auto=format&fit=crop"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70"></div>
         </div>
@@ -65,7 +65,7 @@ const Home = () => {
           {PRODUCTS.map((item) => (
             <div key={item.id} className="group cursor-pointer" onClick={() => navigate(`/product-detail/${item.id}`)}>
               <div className="relative aspect-[4/5] overflow-hidden rounded-3xl mb-6 shadow-xl bg-gray-50 border border-gray-100">
-                <img alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src={item.image} />
+                <img alt={item.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src={item.image} />
                 <button
                    onClick={(e) => { e.stopPropagation(); navigate('/design'); }}
                    className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-black uppercase px-6 py-3 rounded-full opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all"
@@ -116,8 +116,9 @@ const Home = () => {
           </div>
           <div className="relative">
             <img
-              src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1000&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=70&w=800&auto=format&fit=crop"
               alt="About SHIMORI"
+              loading="lazy"
               className="rounded-3xl shadow-2xl"
             />
             <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-[#facc15]/20 rounded-full blur-3xl"></div>
@@ -129,10 +130,6 @@ const Home = () => {
           <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">© 2026 SHIMORI UNIFIED STUDIO</p>
       </footer>
 
-      <style>{`
-        @keyframes slow-zoom { from { transform: scale(1); } to { transform: scale(1.1); } }
-        .animate-slow-zoom { animation: slow-zoom 20s infinite alternate ease-in-out; }
-      `}</style>
     </div>
   );
 };

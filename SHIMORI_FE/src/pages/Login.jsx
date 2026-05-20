@@ -35,7 +35,7 @@ const Login = () => {
         {/* Jewelry Image */}
         <div className="relative z-10 flex-1 flex items-center justify-center">
           <img 
-            src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3" 
+            src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=70&w=800&auto=format&fit=crop" 
             alt="Diamond Ring" 
             className="w-96 h-96 object-cover rounded-lg shadow-2xl"
           />

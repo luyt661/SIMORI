@@ -22,9 +22,6 @@ const Navbar = () => {
 
   return (
     <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 sticky top-0 z-[100] shadow-sm">
-      <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
-
       <div className="flex items-center gap-12">
         <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
           <span className="material-symbols-outlined text-2xl">diamond</span>
