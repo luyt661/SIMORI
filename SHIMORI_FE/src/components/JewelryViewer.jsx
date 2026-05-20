@@ -32,7 +32,7 @@ function RingModel({ url, materialProps, widthScale }) {
     return () => {
       cloned.traverse((child) => {
         if (!child.isMesh) return;
-        child.geometry?.dispose();
+        // Only dispose cloned materials (not geometry — geometry is shared with useGLTF cache)
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach((m) => m?.dispose());
       });
@@ -134,6 +134,9 @@ function GemModel({ url, ringRef }) {
       const posX = prong.x - gemCenter.x * s;
       const posZ = prong.z - gemCenter.z * s;
 
+      console.log(`[GEM] prong tip world: (${prong.x.toFixed(2)}, ${prong.y.toFixed(2)}, ${prong.z.toFixed(2)})`);
+      console.log(`[GEM] s=${s.toFixed(3)} pos=(${posX.toFixed(2)}, ${posY.toFixed(2)}, ${posZ.toFixed(2)})`);
+
       return { position: [posX, posY, posZ], scale: s };
     };
 
@@ -193,7 +196,7 @@ function Scene({ ringUrl, gemUrl, materialProps, ringWidthScale }) {
       <group ref={ringRef}>
         <RingModel url={ringUrl} materialProps={materialProps} widthScale={ringWidthScale} />
       </group>
-      {gemUrl && <GemModel url={gemUrl} ringRef={ringRef} />}
+      {gemUrl && <GemModel key={gemUrl} url={gemUrl} ringRef={ringRef} />}
       <OrbitControls
         autoRotate
         autoRotateSpeed={1.5}
