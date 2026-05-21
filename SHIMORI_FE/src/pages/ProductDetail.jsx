@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import { PRODUCTS } from '../data/products';
@@ -11,13 +11,47 @@ import imgLifestyle from '../demo-images/lifestyle.png';
 const ProductDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const location = useLocation();
 
   const product = PRODUCTS.find((p) => p.id === Number(id)) || PRODUCTS[0];
 
   const thumbnails = [imgFront, imgSide, imgClose, imgLifestyle];
   const [mainImage, setMainImage] = useState(thumbnails[0]);
 
+  // Parse query parameters
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const isCustomized = queryParams.get('customized') === 'true';
+
+  const customizedSpecs = useMemo(() => {
+    if (!isCustomized) return null;
+    return {
+      'Stone Setting': queryParams.get('setting') || 'Prong',
+      'Precious Material': queryParams.get('material') || 'Bạc',
+      'Primary Gemstone': queryParams.get('gemstone') || 'Diamond',
+      'Band Style': queryParams.get('bandStyle') || 'Plain',
+      'Band Width': `${queryParams.get('width') || '2.5'} mm`,
+      'Carat Weight': `${parseFloat(queryParams.get('carat') || '2.0').toFixed(1)} ct`,
+      'Custom Engraving': queryParams.get('engraving') ? `"${queryParams.get('engraving')}" (${queryParams.get('font') || 'Script'})` : 'None',
+    };
+  }, [isCustomized, queryParams]);
+
+  const displayPrice = useMemo(() => {
+    if (isCustomized) {
+      const priceVal = parseInt(queryParams.get('price'), 10);
+      if (!isNaN(priceVal)) {
+        return `$${priceVal.toLocaleString()}`;
+      }
+    }
+    return product.price;
+  }, [isCustomized, queryParams, product.price]);
+
   const handleCustomize = () => {
+    if (isCustomized) {
+      // Carry over exact customization query string
+      navigate(`/design?${queryParams.toString()}`);
+      return;
+    }
+
     const params = new URLSearchParams();
     
     // Default mapped values
@@ -62,28 +96,39 @@ const ProductDetail = () => {
       }
     }
 
+    const gemstoneColors = {
+      'Diamond': 'bg-white shadow-inner border border-gray-200',
+      'Sapphire': 'bg-blue-600',
+      'Ruby': 'bg-red-600',
+      'Emerald': 'bg-emerald-600',
+      'Amethyst': 'bg-purple-600',
+      'Topaz': 'bg-cyan-400',
+    };
+
     const cartItem = {
       id: Date.now(),
-      title: product.fullTitle,
+      title: isCustomized ? `Bespoke Ring - Design #${Math.floor(1000 + Math.random() * 9000)}` : product.fullTitle,
       config: {
-        setting: product.id === 2 ? 'Halo' : product.id === 3 ? 'Channel' : 'Prong',
-        material: 'Bạc',
-        gemstone: 'Diamond',
-        bandStyle: 'Plain',
-        width: 2.5,
+        setting: isCustomized ? (queryParams.get('setting') || 'Prong') : (product.id === 2 ? 'Halo' : product.id === 3 ? 'Channel' : 'Prong'),
+        material: isCustomized ? (queryParams.get('material') || 'Bạc') : 'Bạc',
+        gemstone: isCustomized ? (queryParams.get('gemstone') || 'Diamond') : 'Diamond',
+        bandStyle: isCustomized ? (queryParams.get('bandStyle') || 'Plain') : 'Plain',
+        width: isCustomized ? parseFloat(queryParams.get('width') || '2.5') : 2.5,
       },
-      gemCarat: parseFloat(product.specs?.['Carat Weight']) || 2.0,
-      engraving: '',
-      engravingFont: 'Script',
-      price: parseInt(product.price.replace(/[^0-9]/g, '')),
-      gemColor: 'bg-white shadow-inner border border-gray-200',
+      gemCarat: isCustomized ? parseFloat(queryParams.get('carat') || '2.0') : (parseFloat(product.specs?.['Carat Weight']) || 2.0),
+      engraving: isCustomized ? (queryParams.get('engraving') || '') : '',
+      engravingFont: isCustomized ? (queryParams.get('font') || 'Script') : 'Script',
+      price: isCustomized ? parseInt(queryParams.get('price') || '0', 10) : parseInt(product.price.replace(/[^0-9]/g, '')),
+      gemColor: isCustomized 
+        ? (gemstoneColors[queryParams.get('gemstone') || 'Diamond'] || 'bg-gray-200')
+        : 'bg-white shadow-inner border border-gray-200',
     };
 
     const updated = [...cart, cartItem];
     localStorage.setItem('shimori_cart', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
     
-    toast.success(`Đã thêm ${product.title} vào Giỏ hàng!`, {
+    toast.success(`Đã thêm ${cartItem.title} vào Giỏ hàng!`, {
       style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
     });
 
@@ -134,10 +179,17 @@ const ProductDetail = () => {
           {/* RIGHT: PRODUCT INFO */}
           <div className="lg:col-span-5 flex flex-col h-full">
             <nav className="flex text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-6 gap-2">
-              <a className="hover:text-[#facc15]" href="#" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Home</a>
+              <a className="hover:text-[#facc15]" href="#" onClick={(e) => { e.preventDefault(); navigate('/home'); }}>Home</a>
               <span>/</span>
               <a className="hover:text-[#facc15]" href="#" onClick={(e) => e.preventDefault()}>Engagement Rings</a>
             </nav>
+
+            {isCustomized && (
+              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-black px-4 py-1.5 rounded-full text-[9px] uppercase tracking-[0.2em] font-black mb-6 w-fit shadow-md">
+                <span className="material-symbols-outlined !text-[11px] animate-pulse">workspace_premium</span>
+                Customized Masterpiece
+              </div>
+            )}
 
             <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight tracking-tighter uppercase">
               {product.fullTitle}
@@ -151,7 +203,9 @@ const ProductDetail = () => {
               <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{product.rating} ({product.reviews} reviews)</span>
             </div>
 
-            <p className="text-4xl font-light mb-10 text-[#facc15] tracking-tighter">From {product.price}</p>
+            <p className="text-4xl font-light mb-10 text-[#facc15] tracking-tighter">
+              {isCustomized ? displayPrice : `From ${product.price}`}
+            </p>
 
             <div className="space-y-6 mb-10">
               <p className="text-slate-600 dark:text-gray-400 leading-relaxed text-sm font-medium">
@@ -159,7 +213,7 @@ const ProductDetail = () => {
               </p>
 
               <div className="grid grid-cols-2 gap-y-8 border-y border-gray-100 dark:border-white/10 py-10">
-                {Object.entries(product.specs).map(([label, value]) => (
+                {Object.entries(isCustomized ? customizedSpecs : product.specs).map(([label, value]) => (
                   <div key={label} className="flex flex-col">
                     <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2">{label}</span>
                     <span className="text-sm font-black uppercase">{value}</span>

@@ -1,9 +1,31 @@
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { PRODUCTS } from '../data/products';
 
 const Home = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      const id = location.hash.replace('#', '');
+      const element = document.getElementById(id);
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      }
+    }
+  }, [location]);
+
+  const handleProductClick = (item) => {
+    let setting = 'Prong';
+    if (item.id === 2) setting = 'Halo';
+    else if (item.id === 3) setting = 'Channel';
+    
+    navigate(`/design?setting=${setting}`);
+  };
 
   const steps = [
     { icon: "token", title: "Select", desc: "Choose your base metal and stone type." },
@@ -63,11 +85,11 @@ const Home = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           {PRODUCTS.map((item) => (
-            <div key={item.id} className="group cursor-pointer" onClick={() => navigate(`/product-detail/${item.id}`)}>
+            <div key={item.id} className="group cursor-pointer" onClick={() => handleProductClick(item)}>
               <div className="relative aspect-[4/5] overflow-hidden rounded-3xl mb-6 shadow-xl bg-gray-50 border border-gray-100">
                 <img alt={item.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src={item.image} />
                 <button
-                   onClick={(e) => { e.stopPropagation(); navigate('/design'); }}
+                   onClick={(e) => { e.stopPropagation(); handleProductClick(item); }}
                    className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-black uppercase px-6 py-3 rounded-full opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all"
                 >
                   Customize

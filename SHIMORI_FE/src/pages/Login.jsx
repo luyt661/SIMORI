@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -9,12 +10,18 @@ const Login = () => {
 
   const handleSignIn = (e) => {
     e.preventDefault();
-    // TODO: Add authentication logic later
-    console.log('Sign In:', { email, password });
+    localStorage.setItem('shimori_logged_in', 'true');
+    toast.success('Đăng nhập thành công! Đang chuyển hướng...', {
+      style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+    });
+    setTimeout(() => {
+      navigate('/home');
+    }, 1000);
   };
 
   return (
     <div className="flex min-h-screen bg-gray-900">
+      <Toaster position="bottom-right" reverseOrder={false} />
       {/* Left Side - Image Section */}
       <div className="hidden lg:w-1/2 lg:flex lg:flex-col lg:justify-between bg-gradient-to-b from-gray-900 to-gray-800 p-10 relative overflow-hidden">
         {/* Decorative Background */}
@@ -160,7 +167,7 @@ const Login = () => {
           {/* Navigation Links */}
           <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4">
             <Link 
-              to="/" 
+              to="/home" 
               className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 py-2 rounded-lg font-medium transition-colors text-center"
             >
               Home

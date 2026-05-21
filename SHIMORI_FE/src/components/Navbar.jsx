@@ -34,17 +34,17 @@ const Navbar = () => {
 
   const handleNavClick = (e, sectionId) => {
     e.preventDefault();
-    if (location.pathname === '/') {
+    if (location.pathname === '/home') {
       document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
-      navigate('/');
+      navigate(`/home#${sectionId}`);
     }
   };
 
   return (
     <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-10 sticky top-0 z-[100] shadow-sm">
       <div className="flex items-center gap-12">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
           <span className="material-symbols-outlined text-2xl">diamond</span>
           <h2 className="text-xl font-extrabold tracking-tighter uppercase">SHIMORI</h2>
         </div>

@@ -187,6 +187,11 @@ const DesignStudio = () => {
     if (lightingParam) {
       if (['studio', 'sunset', 'warehouse', 'dawn'].includes(lightingParam)) setLightingPreset(lightingParam);
     }
+    const openCartParam = params.get('openCart');
+    if (openCartParam === 'true') {
+      setShowCart(true);
+      setCheckoutStep('cart');
+    }
   }, []);
 
   // Fetch silver price
@@ -361,6 +366,29 @@ const DesignStudio = () => {
     setShowCart(true);
   };
 
+  const proceedToProductDetail = () => {
+    const params = new URLSearchParams();
+    params.set('setting', config.setting);
+    params.set('material', config.material);
+    params.set('gemstone', config.gemstone);
+    params.set('bandStyle', config.bandStyle);
+    params.set('width', config.width.toString());
+    params.set('carat', gemCarat.toString());
+    if (engraving) {
+      params.set('engraving', engraving);
+      params.set('font', engravingFont);
+    }
+    params.set('lighting', lightingPreset);
+    params.set('price', totalPrice.toString());
+    params.set('customized', 'true');
+    
+    let productId = 1;
+    if (config.setting === 'Halo') productId = 2;
+    else if (config.setting === 'Channel') productId = 3;
+
+    navigate(`/product-detail/${productId}?${params.toString()}`);
+  };
+
   const removeCartItem = (id) => {
     const updated = cart.filter((item) => item.id !== id);
     setCart(updated);
@@ -389,7 +417,7 @@ const DesignStudio = () => {
       <Toaster position="bottom-right" reverseOrder={false} />
 
       <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-8 shrink-0 z-[130]">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
           <span className="material-symbols-outlined text-2xl">diamond</span>
           <h2 className="text-xl font-extrabold tracking-tighter uppercase">SHIMORI</h2>
         </div>
@@ -721,10 +749,10 @@ const DesignStudio = () => {
           <button
             onMouseEnter={() => setShowPriceBreakdown(true)}
             onMouseLeave={() => setShowPriceBreakdown(false)}
-            onClick={addItemToCart}
+            onClick={proceedToProductDetail}
             className="bg-[#b08d26] text-white px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10"
           >
-            Add to Bag & Purchase <span className="material-symbols-outlined text-base">arrow_forward</span>
+            Xem Chi Tiết & Đặt Hàng <span className="material-symbols-outlined text-base">arrow_forward</span>
           </button>
         </div>
       </div>

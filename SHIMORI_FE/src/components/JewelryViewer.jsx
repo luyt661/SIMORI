@@ -156,9 +156,15 @@ function GemModel({ url, ringRef, gemstoneName, gemCarat, ringWidthScale, ringUr
       const prong = findProngTip(ringRef.current);
       if (!prong) return null;
 
-      // Anchor gem's bottom vertex so exactly 80% of the gem's height lies below the prong tips
-      // (This aligns the widest girdle part, mathematically at 78.4% height, snugly just below the prong tips)
-      const overlap = gemSize.y * s * 0.80;
+      // Anchor gem's bottom vertex based on setting model:
+      // Setting 1 (Prong solitaire) holds the gemstone high in the air, so only 1/3 (33%) of its height sits below the prong tips.
+      // Other embedded settings (Bezel, Channel, Halo) require the stone to sit deeper (80% overlap) to be flush with the metal/halo.
+      let overlapFactor = 0.80;
+      if (ringUrl && (ringUrl.includes('/1.') || ringUrl.endsWith('1.glb') || ringUrl.includes('setting1'))) {
+        overlapFactor = 0.33;
+      }
+
+      const overlap = gemSize.y * s * overlapFactor;
       const posY = prong.y - overlap - gemBox.min.y * s;
       const posX = - gemCenter.x * s;
       const posZ = - gemCenter.z * s;
