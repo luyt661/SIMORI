@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 const NAV_ITEMS = [
@@ -9,6 +10,27 @@ const NAV_ITEMS = [
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const updateCount = () => {
+      const raw = localStorage.getItem('shimori_cart');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          setCartCount(parsed.length || 0);
+        } catch (e) {
+          setCartCount(0);
+        }
+      } else {
+        setCartCount(0);
+      }
+    };
+
+    updateCount();
+    window.addEventListener('storage', updateCount);
+    return () => window.removeEventListener('storage', updateCount);
+  }, []);
 
   const handleNavClick = (e, sectionId) => {
     e.preventDefault();
@@ -16,7 +38,6 @@ const Navbar = () => {
       document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
       navigate('/');
-      // Sau khi navigate về home, scroll sẽ không hoạt động ngay — user có thể click lại
     }
   };
 
@@ -67,10 +88,22 @@ const Navbar = () => {
         </Link>
 
         <div className="flex items-center gap-4 text-gray-400">
-          <span className="material-symbols-outlined cursor-pointer hover:text-black transition-colors">favorite</span>
-          <div className="relative">
-            <span className="material-symbols-outlined cursor-pointer hover:text-black transition-colors">shopping_bag</span>
-            <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold">1</span>
+          <span 
+            onClick={() => navigate('/design')}
+            className="material-symbols-outlined cursor-pointer hover:text-black transition-colors"
+          >
+            favorite
+          </span>
+          <div 
+            onClick={() => navigate('/design?openCart=true')}
+            className="relative cursor-pointer group"
+          >
+            <span className="material-symbols-outlined hover:text-black transition-colors">shopping_bag</span>
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-black text-white text-[8px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold">
+                {cartCount}
+              </span>
+            )}
           </div>
           <span className="material-symbols-outlined cursor-pointer hover:text-black transition-colors">person</span>
         </div>

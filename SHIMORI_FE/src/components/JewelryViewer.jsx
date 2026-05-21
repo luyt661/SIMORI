@@ -84,7 +84,22 @@ function findProngTip(object) {
   return maxY > -Infinity ? result : null;
 }
 
-function GemModel({ url, ringRef }) {
+const GEM_OPTICS_CONFIGS = {
+  'Diamond': { color: '#ffffff', transmission: 1.0, roughness: 0.0, ior: 2.417, clearcoat: 1.0 },
+  'Sapphire': { color: '#0f4c81', transmission: 0.9, roughness: 0.05, ior: 1.76, clearcoat: 0.8 },
+  'Ruby': { color: '#9b111e', transmission: 0.9, roughness: 0.05, ior: 1.76, clearcoat: 0.8 },
+  'Emerald': { color: '#046307', transmission: 0.85, roughness: 0.08, ior: 1.57, clearcoat: 0.8 },
+  'Amethyst': { color: '#6a0dad', transmission: 0.9, roughness: 0.05, ior: 1.54, clearcoat: 0.8 },
+  'Topaz': { color: '#00ced1', transmission: 0.92, roughness: 0.05, ior: 1.62, clearcoat: 0.8 },
+};
+
+const getGemConfig = (name) => {
+  if (!name) return GEM_OPTICS_CONFIGS['Diamond'];
+  const key = Object.keys(GEM_OPTICS_CONFIGS).find(k => k.toLowerCase() === name.toLowerCase());
+  return GEM_OPTICS_CONFIGS[key] || GEM_OPTICS_CONFIGS['Diamond'];
+};
+
+function GemModel({ url, ringRef, gemstoneName, gemCarat, ringWidthScale, ringUrl }) {
   const { scene } = useGLTF(url);
   const cloned = useMemo(() => scene.clone(true), [scene]);
   const [transform, setTransform] = useState(null);
@@ -100,6 +115,18 @@ function GemModel({ url, ringRef }) {
     };
   }, [cloned]);
 
+  // Apply gemstone physics shader parameters
+  useEffect(() => {
+    const config = getGemConfig(gemstoneName);
+    cloned.traverse((child) => {
+      if (!child.isMesh) return;
+      // Restore the original high-fidelity solid-crystal material from the GLB model
+      // but clone it to prevent mutating the template cache
+      child.material = child.material.clone();
+      child.material.color.set(config.color);
+    });
+  }, [cloned, gemstoneName]);
+
   useEffect(() => {
     const compute = () => {
       if (!ringRef.current) return null;
@@ -107,7 +134,8 @@ function GemModel({ url, ringRef }) {
       cloned.updateMatrixWorld(true);
 
       const ringBox = new THREE.Box3().setFromObject(ringRef.current);
-      const gemBox = new THREE.Box3().setFromObject(cloned);
+      // Use the pristine base scene geometry to avoid transformed feedback loops
+      const gemBox = new THREE.Box3().setFromObject(scene);
       if (ringBox.isEmpty() || gemBox.isEmpty()) return null;
 
       const ringSize = ringBox.getSize(new THREE.Vector3());
@@ -118,24 +146,22 @@ function GemModel({ url, ringRef }) {
       const gemMax = Math.max(gemSize.x, gemSize.y, gemSize.z);
       if (gemMax > ringSize.y * 10) return null;
 
-      // Scale gem to 22% of ring's Y height (band's outer diameter for upright,
-      // band thickness + prong height for flat rings — works either way)
-      const s = (ringSize.y * 0.22) / gemMax;
+      // Volumetric carat scale factor (base is 2.0 carats)
+      const caratFactor = Math.pow((gemCarat || 2.0) / 2.0, 1 / 3);
 
-      // Locate the actual prong tip (highest-Y vertex), not the bbox center.
-      // The bbox center can be off when the ring has stray geometry in X/Z.
+      // Scale gem to 22% of ring's Y height, adjusted by carat factor
+      const s = ((ringSize.y * 0.22) / gemMax) * caratFactor;
+
+      // Locate the actual prong tip (highest-Y vertex)
       const prong = findProngTip(ringRef.current);
       if (!prong) return null;
 
-      // Anchor gem's bottom vertex just inside the prong tip (15% overlap),
-      // centered horizontally on the prong's X/Z position.
-      const overlap = gemSize.y * s * 0.15;
+      // Anchor gem's bottom vertex so exactly 80% of the gem's height lies below the prong tips
+      // (This aligns the widest girdle part, mathematically at 78.4% height, snugly just below the prong tips)
+      const overlap = gemSize.y * s * 0.80;
       const posY = prong.y - overlap - gemBox.min.y * s;
-      const posX = prong.x - gemCenter.x * s;
-      const posZ = prong.z - gemCenter.z * s;
-
-      console.log(`[GEM] prong tip world: (${prong.x.toFixed(2)}, ${prong.y.toFixed(2)}, ${prong.z.toFixed(2)})`);
-      console.log(`[GEM] s=${s.toFixed(3)} pos=(${posX.toFixed(2)}, ${posY.toFixed(2)}, ${posZ.toFixed(2)})`);
+      const posX = - gemCenter.x * s;
+      const posZ = - gemCenter.z * s;
 
       return { position: [posX, posY, posZ], scale: s };
     };
@@ -150,7 +176,7 @@ function GemModel({ url, ringRef }) {
       if (t2) setTransform(t2);
     });
     return () => cancelAnimationFrame(raf);
-  }, [ringRef, cloned]);
+  }, [ringRef, cloned, gemCarat, ringWidthScale, ringUrl, scene]);
 
   if (!transform) return null;
 
@@ -182,7 +208,7 @@ function CameraAdjust({ ringScene }) {
   return null;
 }
 
-function Scene({ ringUrl, gemUrl, materialProps, ringWidthScale }) {
+function Scene({ ringUrl, gemUrl, materialProps, ringWidthScale, gemstoneName, gemCarat, lightingPreset }) {
   const { scene: ringScene } = useGLTF(ringUrl);
   const ringRef = useRef();
 
@@ -192,11 +218,21 @@ function Scene({ ringUrl, gemUrl, materialProps, ringWidthScale }) {
       <directionalLight position={[5, 10, 5]} intensity={2} castShadow />
       <directionalLight position={[-4, -4, -4]} intensity={0.4} />
       <CameraAdjust ringScene={ringScene} />
-      <Environment preset="studio" />
+      <Environment preset={lightingPreset || "studio"} />
       <group ref={ringRef}>
         <RingModel url={ringUrl} materialProps={materialProps} widthScale={ringWidthScale} />
       </group>
-      {gemUrl && <GemModel key={gemUrl} url={gemUrl} ringRef={ringRef} />}
+      {gemUrl && (
+        <GemModel 
+          key={gemUrl} 
+          url={gemUrl} 
+          ringRef={ringRef} 
+          gemstoneName={gemstoneName}
+          gemCarat={gemCarat}
+          ringWidthScale={ringWidthScale}
+          ringUrl={ringUrl}
+        />
+      )}
       <OrbitControls
         autoRotate
         autoRotateSpeed={1.5}
@@ -215,7 +251,7 @@ function Loader() {
   );
 }
 
-function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidthScale }) {
+function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidthScale, gemstoneName, gemCarat, lightingPreset }) {
   if (!ringUrl) return null;
 
   return (
@@ -234,7 +270,15 @@ function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidthScale }) {
         performance={{ min: 0.5 }}
       >
         <Suspense fallback={<Loader />}>
-          <Scene ringUrl={ringUrl} gemUrl={gemUrl} materialProps={materialProps} ringWidthScale={ringWidthScale} />
+          <Scene 
+            ringUrl={ringUrl} 
+            gemUrl={gemUrl} 
+            materialProps={materialProps} 
+            ringWidthScale={ringWidthScale} 
+            gemstoneName={gemstoneName}
+            gemCarat={gemCarat}
+            lightingPreset={lightingPreset}
+          />
         </Suspense>
       </Canvas>
     </div>
