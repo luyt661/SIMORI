@@ -2,11 +2,21 @@ import { useState, useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import Navbar from '../components/Navbar';
+import JewelryViewer from '../components/JewelryViewer';
 import { PRODUCTS } from '../data/products';
+import { modelGroups } from '../models';
 import imgFront from '../demo-images/front.png';
 import imgSide from '../demo-images/side.png';
 import imgClose from '../demo-images/close.png';
 import imgLifestyle from '../demo-images/lifestyle.png';
+
+const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const MATERIAL_CONFIGS = {
+  'Titan':         { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40 },
+  'Bạc':           { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05 },
+  'Sắt không gỉ': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20 },
+};
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -22,18 +32,28 @@ const ProductDetail = () => {
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const isCustomized = queryParams.get('customized') === 'true';
 
-  const customizedSpecs = useMemo(() => {
+  const customizedConfig = useMemo(() => {
     if (!isCustomized) return null;
     return {
-      'Stone Setting': queryParams.get('setting') || 'Prong',
-      'Precious Material': queryParams.get('material') || 'Bạc',
-      'Primary Gemstone': queryParams.get('gemstone') || 'Diamond',
-      'Band Style': queryParams.get('bandStyle') || 'Plain',
-      'Band Width': `${queryParams.get('width') || '2.5'} mm`,
-      'Carat Weight': `${parseFloat(queryParams.get('carat') || '2.0').toFixed(1)} ct`,
-      'Custom Engraving': queryParams.get('engraving') ? `"${queryParams.get('engraving')}" (${queryParams.get('font') || 'Script'})` : 'None',
+      setting: queryParams.get('setting') || 'Prong',
+      material: queryParams.get('material') || 'Bạc',
+      gemstone: queryParams.get('gemstone') || 'Diamond',
+      bandStyle: queryParams.get('bandStyle') || 'Plain',
+      width: parseFloat(queryParams.get('width') || '2.5'),
     };
   }, [isCustomized, queryParams]);
+
+  const customizedSpecs = useMemo(() => {
+    if (!isCustomized || !customizedConfig) return null;
+    return {
+      'Stone Setting': customizedConfig.setting,
+      'Precious Material': customizedConfig.material,
+      'Primary Gemstone': customizedConfig.gemstone,
+      'Band Style': customizedConfig.bandStyle,
+      'Band Width': `${customizedConfig.width} mm`,
+      'Carat Weight': `${parseFloat(queryParams.get('carat') || '2.0').toFixed(1)} ct`,
+    };
+  }, [isCustomized, customizedConfig, queryParams]);
 
   const displayPrice = useMemo(() => {
     if (isCustomized) {
@@ -44,6 +64,33 @@ const ProductDetail = () => {
     }
     return product.price;
   }, [isCustomized, queryParams, product.price]);
+
+  // Calculate 3D viewer URLs and properties for customized product
+  const settingModelUrl = useMemo(() => {
+    if (!customizedConfig) return null;
+    const target = normalize(customizedConfig.setting);
+    const match = modelGroups.settings.find((m) => normalize(m.name) === target || normalize(m.key) === target);
+    return match?.url || modelGroups.settings[0]?.url;
+  }, [customizedConfig]);
+
+  const gemModelUrl = useMemo(() => {
+    if (!customizedConfig) return null;
+    const target = normalize(customizedConfig.gemstone);
+    const match = modelGroups.gems.find((g) => normalize(g.name) === target || normalize(g.key) === target);
+    return match?.url || modelGroups.gems[0]?.url;
+  }, [customizedConfig]);
+
+  const materialProps = useMemo(() => {
+    if (!customizedConfig) return null;
+    return MATERIAL_CONFIGS[customizedConfig.material] ?? null;
+  }, [customizedConfig]);
+
+  const widthScale = useMemo(() => {
+    if (!customizedConfig) return 1;
+    return parseFloat((customizedConfig.width / 2.5).toFixed(3));
+  }, [customizedConfig]);
+
+  const gemCarat = useMemo(() => parseFloat(queryParams.get('carat') || '2.0'), [queryParams]);
 
   const handleCustomize = () => {
     if (isCustomized) {
@@ -143,117 +190,136 @@ const ProductDetail = () => {
       <Navbar />
 
       {/* MAIN CONTENT */}
-      <main className="max-w-7xl mx-auto px-6 lg:px-12 py-12 flex-grow">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-          
-          {/* LEFT: IMAGE GALLERY */}
+      <main className="max-w-6xl mx-auto px-4 lg:px-8 py-6 flex-grow">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+          {/* LEFT: IMAGE GALLERY OR 3D VIEWER */}
           <div className="lg:col-span-7 space-y-4">
             <div className="aspect-square bg-slate-100 dark:bg-[#2a2a2a] rounded-3xl overflow-hidden group relative shadow-2xl">
-              <img 
-                alt="Classic Diamond Solitaire Ring" 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
-                src={mainImage}
-              />
-              <div 
-                onClick={handleCustomize}
-                className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/70 backdrop-blur-md text-white px-6 py-3 rounded-full text-[10px] uppercase tracking-[0.2em] font-black cursor-pointer hover:bg-[#facc15] hover:text-black transition-all"
-              >
-                <span className="material-symbols-outlined !text-sm">view_in_ar</span>
-                Interactive 3D View
+              {isCustomized && settingModelUrl && gemModelUrl ? (
+                <JewelryViewer
+                  ringUrl={settingModelUrl}
+                  gemUrl={gemModelUrl}
+                  materialProps={materialProps}
+                  ringWidthScale={widthScale}
+                  gemstoneName={customizedConfig.gemstone}
+                  gemCarat={gemCarat}
+                  lightingPreset={queryParams.get('lighting') || 'studio'}
+                  engraving=""
+                  engravingFont="Script"
+                  bandStyle={customizedConfig.bandStyle}
+                />
+              ) : (
+                <>
+                  <img
+                    alt="Classic Diamond Solitaire Ring"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    src={mainImage}
+                  />
+                  <div
+                    onClick={handleCustomize}
+                    className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/70 backdrop-blur-md text-white px-6 py-3 rounded-full text-[10px] uppercase tracking-[0.2em] font-black cursor-pointer hover:bg-[#facc15] hover:text-black transition-all"
+                  >
+                    <span className="material-symbols-outlined !text-sm">view_in_ar</span>
+                    Interactive 3D View
+                  </div>
+                </>
+              )}
+            </div>
+
+            {!isCustomized && (
+              <div className="grid grid-cols-4 gap-2">
+                {thumbnails.map((img, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => setMainImage(img)}
+                    className={`aspect-square rounded-lg overflow-hidden cursor-pointer transition-all border-2 ${mainImage === img ? 'border-[#facc15] scale-95' : 'border-transparent hover:opacity-80'}`}
+                  >
+                    <img alt={`Angle ${idx}`} className="w-full h-full object-cover" src={img}/>
+                  </div>
+                ))}
               </div>
-            </div>
-            
-            <div className="grid grid-cols-4 gap-4">
-              {thumbnails.map((img, idx) => (
-                <div 
-                  key={idx}
-                  onClick={() => setMainImage(img)}
-                  className={`aspect-square rounded-2xl overflow-hidden cursor-pointer transition-all border-2 ${mainImage === img ? 'border-[#facc15] scale-95' : 'border-transparent hover:opacity-80'}`}
-                >
-                  <img alt={`Angle ${idx}`} className="w-full h-full object-cover" src={img}/>
-                </div>
-              ))}
-            </div>
+            )}
           </div>
 
           {/* RIGHT: PRODUCT INFO */}
           <div className="lg:col-span-5 flex flex-col h-full">
-            <nav className="flex text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-6 gap-2">
+            <nav className="flex text-[9px] uppercase tracking-[0.15em] text-slate-400 mb-3 gap-2">
               <a className="hover:text-[#facc15]" href="#" onClick={(e) => { e.preventDefault(); navigate('/home'); }}>Home</a>
               <span>/</span>
               <a className="hover:text-[#facc15]" href="#" onClick={(e) => e.preventDefault()}>Engagement Rings</a>
             </nav>
 
             {isCustomized && (
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-black px-4 py-1.5 rounded-full text-[9px] uppercase tracking-[0.2em] font-black mb-6 w-fit shadow-md">
-                <span className="material-symbols-outlined !text-[11px] animate-pulse">workspace_premium</span>
-                Customized Masterpiece
+              <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black px-3 py-1 rounded-full text-[8px] uppercase tracking-[0.15em] font-black mb-2 w-fit shadow-md">
+                <span className="material-symbols-outlined !text-[9px] animate-pulse">workspace_premium</span>
+                Customized
               </div>
             )}
 
-            <h2 className="text-4xl md:text-5xl font-black mb-4 leading-tight tracking-tighter uppercase">
+            <h2 className="text-2xl md:text-3xl font-black mb-2 leading-tight tracking-tighter uppercase">
               {product.fullTitle}
             </h2>
 
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-3 mb-3">
               <div className="flex text-[#facc15]">
-                {[1,2,3,4].map(i => <span key={i} className="material-symbols-outlined !text-sm">star</span>)}
-                <span className="material-symbols-outlined !text-sm">star_half</span>
+                {[1,2,3,4].map(i => <span key={i} className="material-symbols-outlined !text-xs">star</span>)}
+                <span className="material-symbols-outlined !text-xs">star_half</span>
               </div>
-              <span className="text-xs font-bold uppercase tracking-widest text-slate-400">{product.rating} ({product.reviews} reviews)</span>
+              <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">{product.rating} ({product.reviews})</span>
             </div>
 
-            <p className="text-4xl font-light mb-10 text-[#facc15] tracking-tighter">
+            <p className="text-3xl font-light mb-4 text-[#facc15] tracking-tighter">
               {isCustomized ? displayPrice : `From ${product.price}`}
             </p>
 
-            <div className="space-y-6 mb-10">
-              <p className="text-slate-600 dark:text-gray-400 leading-relaxed text-sm font-medium">
+            <div className="space-y-3 mb-4">
+              <p className="text-slate-600 dark:text-gray-400 leading-relaxed text-xs font-medium line-clamp-2">
                 {product.description}
               </p>
 
-              <div className="grid grid-cols-2 gap-y-8 border-y border-gray-100 dark:border-white/10 py-10">
+              <div className="grid grid-cols-2 gap-y-4 border-y border-gray-100 dark:border-white/10 py-4">
                 {Object.entries(isCustomized ? customizedSpecs : product.specs).map(([label, value]) => (
                   <div key={label} className="flex flex-col">
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-2">{label}</span>
-                    <span className="text-sm font-black uppercase">{value}</span>
+                    <span className="text-[8px] uppercase tracking-[0.1em] text-slate-400 mb-1">{label}</span>
+                    <span className="text-[10px] font-black uppercase">{value}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* ACTIONS */}
-            <div className="space-y-4 mt-auto">
-              <div className="flex gap-4">
-                <button 
+            <div className="space-y-3 mt-auto">
+              <div className="flex gap-2">
+                <button
                   onClick={addToCart}
-                  className="flex-1 bg-[#facc15] text-black font-black py-5 rounded-2xl uppercase tracking-[0.2em] text-xs hover:bg-black hover:text-white transition-all flex items-center justify-center gap-3 shadow-xl"
+                  className="flex-1 bg-[#facc15] text-black font-black py-3 rounded-xl uppercase tracking-[0.15em] text-[9px] hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
-                  <span className="material-symbols-outlined text-lg">shopping_cart</span>
+                  <span className="material-symbols-outlined text-sm">shopping_cart</span>
                   Add to Bag
                 </button>
-                <button 
+                <button
                   onClick={() => toast.success('Đã thêm sản phẩm vào danh sách yêu thích!')}
-                  className="p-5 border border-gray-200 dark:border-white/10 rounded-2xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  className="p-3 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
-                  <span className="material-symbols-outlined">favorite</span>
+                  <span className="material-symbols-outlined text-sm">favorite</span>
                 </button>
               </div>
-              <button 
+              <button
                 onClick={handleCustomize}
-                className="w-full bg-black dark:bg-white dark:text-black text-white font-black py-5 rounded-2xl uppercase tracking-[0.2em] text-xs hover:opacity-80 transition-all border border-black dark:border-white"
+                className="w-full bg-black dark:bg-white dark:text-black text-white font-black py-3 rounded-xl uppercase tracking-[0.15em] text-[9px] hover:opacity-80 transition-all border border-black dark:border-white"
               >
                 Customize with 3D Studio
               </button>
             </div>
-            
-            <div className="mt-10 flex items-center gap-8 justify-center lg:justify-start opacity-50">
-              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">
-                <span className="material-symbols-outlined !text-lg text-[#facc15]">verified</span>
+
+            <div className="mt-3 flex items-center gap-3 justify-center lg:justify-start opacity-60">
+              <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-widest">
+                <span className="material-symbols-outlined !text-sm text-[#facc15]">verified</span>
                 Lifetime Warranty
               </div>
-              <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest">
-                <span className="material-symbols-outlined !text-lg text-[#facc15]">local_shipping</span>
+              <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-widest">
+                <span className="material-symbols-outlined !text-sm text-[#facc15]">local_shipping</span>
                 Secure Delivery
               </div>
             </div>
@@ -262,8 +328,8 @@ const ProductDetail = () => {
       </main>
 
       {/* FOOTER */}
-      <footer className="py-12 border-t border-gray-100 dark:border-white/5 mt-20">
-        <div className="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+      <footer className="py-6 border-t border-gray-100 dark:border-white/5 mt-8">
+        <div className="max-w-6xl mx-auto px-4 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-3 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">
           <p>© 2026 SHIMORI FINE JEWELRY. ALL RIGHTS RESERVED.</p>
           <div className="flex gap-8">
             <a className="hover:text-[#facc15] transition-colors" href="#">Privacy</a>

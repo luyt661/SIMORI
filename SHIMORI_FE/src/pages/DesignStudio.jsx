@@ -110,6 +110,7 @@ const DesignStudio = () => {
 
   const [gemCarat, setGemCarat] = useState(2.0);
   const [engraving, setEngraving] = useState('');
+  const [engravingInput, setEngravingInput] = useState('');
   const [engravingFont, setEngravingFont] = useState('Script');
   const [lightingPreset, setLightingPreset] = useState('studio');
 
@@ -180,6 +181,7 @@ const DesignStudio = () => {
     }
     if (engravingParam) {
       setEngraving(engravingParam);
+      setEngravingInput(engravingParam);
     }
     if (fontParam) {
       if (['Serif', 'Sans', 'Script'].includes(fontParam)) setEngravingFont(fontParam);
@@ -317,6 +319,7 @@ const DesignStudio = () => {
       gemCarat,
       engraving,
       engravingFont,
+      lightingPreset,
       totalPrice,
       date: new Date().toLocaleDateString('vi-VN'),
     };
@@ -340,7 +343,9 @@ const DesignStudio = () => {
     setConfig(design.config);
     setGemCarat(design.gemCarat);
     setEngraving(design.engraving || '');
+    setEngravingInput(design.engraving || '');
     setEngravingFont(design.engravingFont || 'Script');
+    setLightingPreset(design.lightingPreset || 'studio');
     setShowSavedModal(false);
     toast.success('Đã tải thiết kế thành công!');
   };
@@ -587,15 +592,27 @@ const DesignStudio = () => {
           </SidebarSection>
 
           <SidebarSection step="07" title="Personal Engraving">
-            <input 
-              type="text" 
-              placeholder="E.g., FOREVER YOURS (+$150)" 
-              maxLength="30"
-              value={engraving}
-              onChange={(e) => setEngraving(e.target.value.toUpperCase())}
-              className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs focus:ring-1 focus:ring-[#b08d26] outline-none font-bold uppercase tracking-wider mb-3 text-gray-800 placeholder:text-gray-400"
-            />
-            {engraving && (
+            <div className="flex gap-2 mb-3">
+              <input 
+                type="text" 
+                placeholder="E.g., FOREVER YOURS (+$150)" 
+                maxLength="30"
+                value={engravingInput}
+                onChange={(e) => setEngravingInput(e.target.value.toUpperCase())}
+                className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs focus:ring-1 focus:ring-[#b08d26] outline-none font-bold uppercase tracking-wider text-gray-800 placeholder:text-gray-400"
+              />
+              <button
+                onClick={() => {
+                  setEngraving(engravingInput);
+                  toast.success('Đã khắc chữ lên nhẫn!');
+                }}
+                className={`p-3 rounded-xl border transition-all flex items-center justify-center ${engravingInput !== engraving ? 'bg-[#b08d26] text-white border-[#b08d26] hover:bg-[#b08d26]/90 shadow-sm' : 'bg-gray-50 text-gray-400 border-gray-100'}`}
+                title="Khắc lên nhẫn"
+              >
+                <span className="material-symbols-outlined text-lg">publish</span>
+              </button>
+            </div>
+            {engravingInput && (
               <div className="flex gap-2 justify-between">
                 {['Script', 'Serif', 'Sans'].map(font => (
                   <button 
@@ -648,6 +665,9 @@ const DesignStudio = () => {
                   gemstoneName={config.gemstone}
                   gemCarat={gemCarat}
                   lightingPreset={lightingPreset}
+                  engraving={engraving}
+                  engravingFont={engravingFont}
+                  bandStyle={config.bandStyle}
                 />
               </div>
               <div className="mt-8 flex flex-col items-center gap-2">

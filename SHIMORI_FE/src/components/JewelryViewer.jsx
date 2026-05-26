@@ -84,6 +84,174 @@ function findProngTip(object) {
   return maxY > -Infinity ? result : null;
 }
 
+function findInnerBottom(object) {
+  const box = new THREE.Box3().setFromObject(object);
+  if (box.isEmpty()) return null;
+
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  let minDistanceY = Infinity;
+  const result = new THREE.Vector3();
+  const v = new THREE.Vector3();
+
+  const allowedXOffset = Math.max(0.45, size.x * 0.25);
+  const allowedZOffset = Math.max(0.45, size.z * 0.45);
+
+  object.traverse((child) => {
+    if (!child.isMesh) return;
+    const pos = child.geometry?.attributes?.position;
+    if (!pos) return;
+    child.updateMatrixWorld(true);
+    const mat = child.matrixWorld;
+
+    const step = Math.max(1, Math.floor(pos.count / 2000));
+    for (let i = 0; i < pos.count; i += step) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(mat);
+      if (v.y < center.y &&
+          Math.abs(v.x - center.x) < allowedXOffset &&
+          Math.abs(v.z - center.z) < allowedZOffset) {
+
+        const distToCenter = center.y - v.y;
+        if (distToCenter < minDistanceY) {
+          minDistanceY = distToCenter;
+          result.copy(v);
+        }
+      }
+    }
+  });
+
+  return minDistanceY < Infinity ? result : null;
+}
+
+function EngravingModel({ engraving, engravingFont, ringRef, bandStyle, ringUrl, materialProps }) {
+  const [surfaceData, setSurfaceData] = useState(null);
+
+  useEffect(() => {
+    if (!ringRef.current || !engraving) return;
+    ringRef.current.updateMatrixWorld(true);
+
+    const innerBottom = findInnerBottom(ringRef.current);
+    if (!innerBottom) return;
+
+    const box = new THREE.Box3().setFromObject(ringRef.current);
+    if (box.isEmpty()) return;
+
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+
+    // Find the inner surface normal at innerBottom point
+    let surfaceNormal = new THREE.Vector3(0, -1, 0);
+    let nearestDistance = Infinity;
+
+    ringRef.current.traverse((child) => {
+      if (!child.isMesh) return;
+      const pos = child.geometry?.attributes?.position;
+      if (!pos) return;
+      child.updateMatrixWorld(true);
+      const mat = child.matrixWorld;
+      const v = new THREE.Vector3();
+
+      for (let i = 0; i < pos.count; i += Math.max(1, Math.floor(pos.count / 500))) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(mat);
+        const dist = v.distanceTo(innerBottom);
+        if (dist < nearestDistance && dist > 0.001) {
+          nearestDistance = dist;
+          // Approximate normal by checking neighboring vertices
+          if (i > 0 && i < pos.count - 1) {
+            const v1 = new THREE.Vector3().fromBufferAttribute(pos, i - 1).applyMatrix4(mat);
+            const v2 = new THREE.Vector3().fromBufferAttribute(pos, i + 1).applyMatrix4(mat);
+            const edge1 = new THREE.Vector3().subVectors(v2, v);
+            const edge2 = new THREE.Vector3().subVectors(v1, v);
+            surfaceNormal.crossVectors(edge1, edge2).normalize();
+          }
+        }
+      }
+    });
+
+    // Calculate inner radius
+    const innerRadius = Math.min(size.x, size.z) / 2.8;
+    const circumference = Math.PI * innerRadius * 2;
+    const charSpacing = circumference / (engraving.length + 1);
+    const totalArc = charSpacing * engraving.length;
+    const startAngle = Math.PI - (totalArc / (2 * innerRadius));
+
+    const chars = [];
+    for (let i = 0; i < engraving.length; i++) {
+      const angle = startAngle + (i * charSpacing) / innerRadius;
+      const x = center.x + innerRadius * Math.cos(angle);
+      const z = center.z + innerRadius * Math.sin(angle);
+      const y = innerBottom.y;
+
+      // Offset INTO the ring along the surface normal
+      const offsetDist = 0.015;
+      const offsetPos = new THREE.Vector3(x, y, z).addScaledVector(surfaceNormal, -offsetDist);
+
+      chars.push({
+        char: engraving[i],
+        position: [offsetPos.x, offsetPos.y, offsetPos.z],
+        angle: angle + Math.PI / 2,
+      });
+    }
+
+    setSurfaceData({
+      chars,
+      normal: surfaceNormal,
+      innerRadius,
+    });
+  }, [ringRef, bandStyle, ringUrl, engraving]);
+
+  const textColor = useMemo(() => {
+    if (materialProps && materialProps.color) {
+      const [r, g, b] = materialProps.color;
+      return `#${Math.round(r * 0.7 * 255).toString(16).padStart(2, '0')}${Math.round(g * 0.7 * 255).toString(16).padStart(2, '0')}${Math.round(b * 0.7 * 255).toString(16).padStart(2, '0')}`;
+    }
+    return '#6b5441';
+  }, [materialProps]);
+
+  const showEngraving = engraving && bandStyle !== 'Twisted' && bandStyle !== 'Eternity';
+
+  if (!showEngraving || !surfaceData) return null;
+
+  // Create canvas texture for each character
+  const createCharTexture = (char) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+
+    // Draw char
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 100px serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, 64, 64);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    return texture;
+  };
+
+  return (
+    <group>
+      {surfaceData.chars.map((charData, idx) => (
+        <mesh key={idx} position={charData.position} rotation={[0, charData.angle, Math.PI]}>
+          <planeGeometry args={[0.06, 0.09]} />
+          <meshStandardMaterial
+            map={createCharTexture(charData.char)}
+            metalness={0.85}
+            roughness={0.25}
+            emissive="#333333"
+            emissiveIntensity={0.2}
+            side={THREE.DoubleSide}
+            transparent
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 const GEM_OPTICS_CONFIGS = {
   'Diamond': { color: '#ffffff', transmission: 1.0, roughness: 0.0, ior: 2.417, clearcoat: 1.0 },
   'Sapphire': { color: '#0f4c81', transmission: 0.9, roughness: 0.05, ior: 1.76, clearcoat: 0.8 },
@@ -214,7 +382,7 @@ function CameraAdjust({ ringScene }) {
   return null;
 }
 
-function Scene({ ringUrl, gemUrl, materialProps, ringWidthScale, gemstoneName, gemCarat, lightingPreset }) {
+function Scene({ ringUrl, gemUrl, materialProps, ringWidthScale, gemstoneName, gemCarat, lightingPreset, engraving, engravingFont, bandStyle }) {
   const { scene: ringScene } = useGLTF(ringUrl);
   const ringRef = useRef();
 
@@ -239,6 +407,17 @@ function Scene({ ringUrl, gemUrl, materialProps, ringWidthScale, gemstoneName, g
           ringUrl={ringUrl}
         />
       )}
+      {/* Engraving feature disabled temporarily */}
+      {/* <Suspense fallback={null}>
+        <EngravingModel
+          engraving={engraving}
+          engravingFont={engravingFont}
+          ringRef={ringRef}
+          bandStyle={bandStyle}
+          ringUrl={ringUrl}
+          materialProps={materialProps}
+        />
+      </Suspense> */}
       <OrbitControls
         autoRotate
         autoRotateSpeed={1.5}
@@ -257,7 +436,7 @@ function Loader() {
   );
 }
 
-function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidthScale, gemstoneName, gemCarat, lightingPreset }) {
+function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidthScale, gemstoneName, gemCarat, lightingPreset, engraving, engravingFont, bandStyle }) {
   if (!ringUrl) return null;
 
   return (
@@ -284,6 +463,9 @@ function JewelryViewer({ ringUrl, gemUrl, materialProps, ringWidthScale, gemston
             gemstoneName={gemstoneName}
             gemCarat={gemCarat}
             lightingPreset={lightingPreset}
+            engraving={engraving}
+            engravingFont={engravingFont}
+            bandStyle={bandStyle}
           />
         </Suspense>
       </Canvas>
