@@ -119,7 +119,7 @@ const Navbar = () => {
           >
             <span className={`material-symbols-outlined hover:text-black transition-colors ${
               isHovered ? 'text-base' : 'text-sm'
-            }`}>shopping_bag</span>
+            }`}>shopping_cart</span>
             {cartCount > 0 && (
               <span className={`absolute bg-black text-white text-[7px] font-bold rounded-full flex items-center justify-center transition-all duration-300 ${
                 isHovered ? '-top-0.5 -right-0.5 w-4 h-4' : '-top-1 -right-1 w-3.5 h-3.5'

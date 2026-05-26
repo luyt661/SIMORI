@@ -17,8 +17,8 @@ const SILVER_FALLBACK_OZ = 33.0; // fallback nếu API lỗi (USD/oz)
 // Giá tĩnh — cập nhật định kỳ theo thị trường
 const PRICES = {
   material: {
-    'Titan': 1_200,       // industrial titanium + craftsmanship
-    'Sắt không gỉ': 550,  // stainless steel + craftsmanship
+    'Titanium': 1_200,       // industrial titanium + craftsmanship
+    'Stainless Steel': 550,  // stainless steel + craftsmanship
   },
   gemstone: {
     'Diamond': 10_800,
@@ -40,16 +40,16 @@ const PRICES = {
 };
 
 const MATERIAL_CONFIGS = {
-  'Titan':         { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40, displayColor: 'from-[#374151] to-[#6b7280]' },
-  'Bạc':           { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05, displayColor: 'from-[#cbd5e1] to-[#f8fafc]' },
-  'Sắt không gỉ': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20, displayColor: 'from-[#52525b] to-[#a1a1aa]' },
+  'Titanium':      { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40, displayColor: 'from-[#374151] to-[#6b7280]' },
+  'Silver':        { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05, displayColor: 'from-[#cbd5e1] to-[#f8fafc]' },
+  'Stainless Steel': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20, displayColor: 'from-[#52525b] to-[#a1a1aa]' },
 };
 
 const LIGHTING_PRESETS = [
-  { id: 'studio', label: 'Luxury Studio', icon: 'wb_sunny', desc: 'Sắc nét, phản chiếu đỉnh cao' },
-  { id: 'sunset', label: 'Warm Sunset', icon: 'flare', desc: 'Ấm áp, phản chiếu hoàng hôn vàng' },
-  { id: 'warehouse', label: 'Daylight Showroom', icon: 'light_mode', desc: 'Ánh sáng ngoài trời chân thực' },
-  { id: 'dawn', label: 'Dawn Glow', icon: 'filter_drama', desc: 'Dịu nhẹ, thanh lịch buổi sớm' }
+  { id: 'studio', label: 'Luxury Studio', icon: 'wb_sunny', desc: 'Sharp, top-tier reflections' },
+  { id: 'sunset', label: 'Warm Sunset', icon: 'flare', desc: 'Warm, golden sunset reflections' },
+  { id: 'warehouse', label: 'Daylight Showroom', icon: 'light_mode', desc: 'Realistic outdoor daylight' },
+  { id: 'dawn', label: 'Dawn Glow', icon: 'filter_drama', desc: 'Soft, elegant early morning glow' }
 ];
 
 const fallbackSettings = [
@@ -100,9 +100,11 @@ const SidebarSection = ({ title, children, step }) => (
 const DesignStudio = () => {
   const navigate = useNavigate();
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [gemSelected, setGemSelected] = useState(false);
   const [config, setConfig] = useState({
     setting: defaultSetting,
-    material: 'Titan',
+    material: 'Titanium',
     gemstone: 'Diamond',
     bandStyle: 'Plain',
     width: 2.5,
@@ -121,15 +123,6 @@ const DesignStudio = () => {
   // Cart & Checkout
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState('cart'); // 'cart' | 'shipping' | 'success'
-  const [shippingInfo, setShippingInfo] = useState({
-    email: '',
-    name: '',
-    address: '',
-    card: '',
-    expiry: '',
-    cvc: '',
-  });
 
   const [silverPriceOz, setSilverPriceOz] = useState(null);
   const [priceSource, setPriceSource] = useState('loading'); // 'live' | 'estimated'
@@ -192,7 +185,6 @@ const DesignStudio = () => {
     const openCartParam = params.get('openCart');
     if (openCartParam === 'true') {
       setShowCart(true);
-      setCheckoutStep('cart');
     }
   }, []);
 
@@ -235,7 +227,7 @@ const DesignStudio = () => {
 
   const priceDetails = useMemo(() => {
     const widthMultiplier = config.width / 2.5;
-    const baseMatPrice = config.material === 'Bạc'
+    const baseMatPrice = config.material === 'Silver'
       ? silverMaterialPrice
       : Math.round((PRICES.material[config.material] ?? 0) * widthMultiplier);
     
@@ -244,7 +236,7 @@ const DesignStudio = () => {
     const scaledGemPrice = Math.round(gemstoneBasePrice * (gemCarat / 2.0));
 
     const details = [
-      { label: 'Base Metal',    value: `${config.material} · ${config.width}mm`,  price: baseMatPrice,                                    isLive: config.material === 'Bạc' && priceSource === 'live' },
+      { label: 'Base Metal',    value: `${config.material} · ${config.width}mm`,  price: baseMatPrice,                                    isLive: config.material === 'Silver' && priceSource === 'live' },
       { label: 'Center Stone',  value: `${config.gemstone} · ${gemCarat.toFixed(1)} ct`, price: scaledGemPrice,                                 isLive: false },
       { label: 'Band Style',    value: config.bandStyle,                           price: PRICES.bandStyle[config.bandStyle] ?? 0,         isLive: false },
       { label: 'Craftsmanship', value: 'Handcrafted Artistry',                     price: PRICES.craftsmanship,                            isLive: false },
@@ -302,12 +294,12 @@ const DesignStudio = () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
     navigator.clipboard.writeText(shareUrl)
       .then(() => {
-        toast.success('Liên kết thiết kế của bạn đã được sao chép!', {
+        toast.success('Your design link has been copied!', {
           style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
         });
       })
       .catch(() => {
-        toast.error('Không thể sao chép liên kết.');
+        toast.error('Could not copy link.');
       });
   };
 
@@ -321,12 +313,12 @@ const DesignStudio = () => {
       engravingFont,
       lightingPreset,
       totalPrice,
-      date: new Date().toLocaleDateString('vi-VN'),
+      date: new Date().toLocaleDateString('en-US'),
     };
     const updated = [newDesign, ...savedDesigns];
     setSavedDesigns(updated);
     localStorage.setItem('shimori_saved_designs', JSON.stringify(updated));
-    toast.success('Đã lưu thiết kế vào Bộ sưu tập của bạn!', {
+    toast.success('Design saved to your Collection!', {
       icon: '💎',
       style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
     });
@@ -336,7 +328,7 @@ const DesignStudio = () => {
     const updated = savedDesigns.filter((d) => d.id !== id);
     setSavedDesigns(updated);
     localStorage.setItem('shimori_saved_designs', JSON.stringify(updated));
-    toast.success('Đã xóa thiết kế.');
+    toast.success('Design deleted successfully.');
   };
 
   const loadSavedDesign = (design) => {
@@ -347,7 +339,7 @@ const DesignStudio = () => {
     setEngravingFont(design.engravingFont || 'Script');
     setLightingPreset(design.lightingPreset || 'studio');
     setShowSavedModal(false);
-    toast.success('Đã tải thiết kế thành công!');
+    toast.success('Design loaded successfully!');
   };
 
   // Cart & Checkout handlers
@@ -366,8 +358,7 @@ const DesignStudio = () => {
     setCart(updated);
     localStorage.setItem('shimori_cart', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
-    toast.success('Đã thêm nhẫn vào Giỏ hàng!');
-    setCheckoutStep('cart');
+    toast.success('Added ring to Cart!');
     setShowCart(true);
   };
 
@@ -401,15 +392,7 @@ const DesignStudio = () => {
     window.dispatchEvent(new Event('storage'));
   };
 
-  const handleCheckoutSubmit = (e) => {
-    e.preventDefault();
-    if (!shippingInfo.email || !shippingInfo.name || !shippingInfo.address || !shippingInfo.card) {
-      toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
-      return;
-    }
-    setCheckoutStep('success');
-    toast.success('Thanh toán thành công! Đơn hàng của bạn đang được chế tác.');
-  };
+
 
   const clearWholeCart = () => {
     setCart([]);
@@ -446,11 +429,11 @@ const DesignStudio = () => {
           </button>
 
           <button 
-            onClick={() => { setCheckoutStep('cart'); setShowCart(true); }}
+            onClick={() => { setShowCart(true); }}
             className="bg-black text-white px-5 py-2 rounded text-[9px] font-black uppercase tracking-widest hover:bg-[#b08d26] transition-colors flex items-center gap-2 relative"
           >
-            <span className="material-symbols-outlined text-xs">shopping_bag</span> 
-            Bag
+            <span className="material-symbols-outlined text-xs">shopping_cart</span> 
+            Cart
             {cart.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-[#facc15] text-black text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>
             )}
@@ -493,7 +476,7 @@ const DesignStudio = () => {
           <SidebarSection step="01" title="Stone Setting">
             <div className="grid grid-cols-3 gap-2">
               {settings.map((s) => (
-                <button key={s.name} onClick={() => setConfig({...config, setting: s.name})}
+                <button key={s.name} onClick={() => { setConfig({...config, setting: s.name}); setShowPreview(true); }}
                   className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-200 ${
                     config.setting === s.name
                       ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20 scale-[1.03]'
@@ -509,7 +492,7 @@ const DesignStudio = () => {
           <SidebarSection step="02" title="Precious Material">
             <div className="space-y-2">
               {materials.map((m) => (
-                <button key={m.name} onClick={() => setConfig({...config, material: m.name})}
+                <button key={m.name} onClick={() => { setConfig({...config, material: m.name}); setShowPreview(true); }}
                   className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${
                     config.material === m.name
                       ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20'
@@ -531,7 +514,7 @@ const DesignStudio = () => {
           <SidebarSection step="03" title="Primary Gemstone">
             <div className="flex flex-wrap gap-3">
               {gemstones.map((g) => (
-                <button key={g.name} onClick={() => setConfig({...config, gemstone: g.name})}
+                <button key={g.name} onClick={() => { setConfig({...config, gemstone: g.name}); setGemSelected(true); setShowPreview(true); }}
                   className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all duration-200 ${
                     config.gemstone === g.name
                       ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20 scale-[1.05]'
@@ -547,7 +530,7 @@ const DesignStudio = () => {
           <SidebarSection step="04" title="Band Style">
             <div className="grid grid-cols-2 gap-2">
               {bandStyles.map((style) => (
-                <button key={style} onClick={() => setConfig({...config, bandStyle: style})}
+                <button key={style} onClick={() => { setConfig({...config, bandStyle: style}); setShowPreview(true); }}
                   className={`py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${
                     config.bandStyle === style
                       ? 'border-2 border-[#b08d26] text-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20'
@@ -604,10 +587,10 @@ const DesignStudio = () => {
               <button
                 onClick={() => {
                   setEngraving(engravingInput);
-                  toast.success('Đã khắc chữ lên nhẫn!');
+                  toast.success('Engraving applied!');
                 }}
                 className={`p-3 rounded-xl border transition-all flex items-center justify-center ${engravingInput !== engraving ? 'bg-[#b08d26] text-white border-[#b08d26] hover:bg-[#b08d26]/90 shadow-sm' : 'bg-gray-50 text-gray-400 border-gray-100'}`}
-                title="Khắc lên nhẫn"
+                title="Engrave Ring"
               >
                 <span className="material-symbols-outlined text-lg">publish</span>
               </button>
@@ -655,28 +638,38 @@ const DesignStudio = () => {
           </div>
 
           <div className="flex-1 flex flex-col items-center justify-center p-10 min-h-[600px] shrink-0">
-            <div className="relative group flex flex-col items-center">
-              <div style={{ width: 'min(70vw, 900px)', height: 'min(70vw, 600px)' }}>
-                <JewelryViewer
-                  ringUrl={settingModelUrl}
-                  gemUrl={gemModelUrl}
-                  materialProps={materialProps}
-                  ringWidthScale={parseFloat(widthScale)}
-                  gemstoneName={config.gemstone}
-                  gemCarat={gemCarat}
-                  lightingPreset={lightingPreset}
-                  engraving={engraving}
-                  engravingFont={engravingFont}
-                  bandStyle={config.bandStyle}
-                />
-              </div>
-              <div className="mt-8 flex flex-col items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100 cursor-pointer">
-                  <span className="material-symbols-outlined text-[#b08d26]">open_with</span>
+            {showPreview ? (
+              <div className="relative group flex flex-col items-center">
+                <div style={{ width: 'min(70vw, 900px)', height: 'min(70vw, 600px)' }}>
+                  <JewelryViewer
+                    ringUrl={settingModelUrl}
+                    gemUrl={gemSelected ? gemModelUrl : null}
+                    materialProps={materialProps}
+                    ringWidthScale={parseFloat(widthScale)}
+                    gemstoneName={config.gemstone}
+                    gemCarat={gemCarat}
+                    lightingPreset={lightingPreset}
+                    engraving={engraving}
+                    engravingFont={engravingFont}
+                    bandStyle={config.bandStyle}
+                  />
                 </div>
-                <span className="text-[9px] font-black text-[#b08d26] uppercase">Explore 360°</span>
+                <div className="mt-8 flex flex-col items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100 cursor-pointer">
+                    <span className="material-symbols-outlined text-[#b08d26]">open_with</span>
+                  </div>
+                  <span className="text-[9px] font-black text-[#b08d26] uppercase">Explore 360°</span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-4">
+                <div className="w-40 h-40 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center border-2 border-dashed border-gray-200">
+                  <span className="material-symbols-outlined text-7xl text-gray-200">diamond</span>
+                </div>
+                <p className="text-base font-black text-gray-300 uppercase tracking-[0.3em]">Choose Your Ring</p>
+                <p className="text-[10px] text-gray-300 uppercase tracking-widest font-bold">Select a stone setting to begin</p>
+              </div>
+            )}
           </div>
 
           <div className="bg-white border-t border-gray-100 px-10 py-8 flex gap-8 shrink-0 overflow-x-auto no-scrollbar">
@@ -686,7 +679,7 @@ const DesignStudio = () => {
             </div>
             <div className="flex gap-4">
               {gemstones.map((gem) => (
-                <button key={gem.name} onClick={() => setConfig({...config, gemstone: gem.name})}
+                <button key={gem.name} onClick={() => { setConfig({...config, gemstone: gem.name}); setGemSelected(true); setShowPreview(true); }}
                   className={`flex flex-col items-center min-w-[150px] p-5 rounded-xl border transition-all ${config.gemstone === gem.name ? 'border-[#b08d26] bg-gray-50' : 'border-transparent hover:bg-gray-50'}`}>
                   <div className={`w-4 h-4 rotate-45 ${gem.color} border border-gray-200 mb-3`}></div>
                   <span className="text-[9px] font-black uppercase tracking-tighter text-center">{gem.label} {gem.name}</span>
@@ -772,7 +765,7 @@ const DesignStudio = () => {
             onClick={proceedToProductDetail}
             className="bg-[#b08d26] text-white px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10"
           >
-            Xem Chi Tiết & Đặt Hàng <span className="material-symbols-outlined text-base">arrow_forward</span>
+            View Details & Order <span className="material-symbols-outlined text-base">arrow_forward</span>
           </button>
         </div>
       </div>
@@ -846,8 +839,8 @@ const DesignStudio = () => {
       <div className={`fixed inset-y-0 right-0 w-[450px] bg-white z-[180] shadow-[0_0_60px_rgba(0,0,0,0.15)] flex flex-col transition-transform duration-500 transform ${showCart ? 'translate-x-0' : 'translate-x-full'}`}>
         <header className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#b08d26]">shopping_bag</span>
-            <h3 className="text-md font-black uppercase tracking-wider">Your Shopping Bag</h3>
+            <span className="material-symbols-outlined text-[#b08d26]">shopping_cart</span>
+            <h3 className="text-md font-black uppercase tracking-wider">Your Shopping Cart</h3>
             <span className="bg-gray-100 text-gray-700 text-[9px] px-2 py-0.5 rounded-full font-bold ml-2">{cart.length}</span>
           </div>
           <button onClick={() => setShowCart(false)} className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
@@ -856,172 +849,58 @@ const DesignStudio = () => {
         </header>
 
         {/* CART STEP CONTENT */}
-        {checkoutStep === 'cart' && (
-          <div className="flex-1 overflow-y-auto flex flex-col bg-gray-50/50">
-            {cart.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-20 px-8 text-center">
-                <span className="material-symbols-outlined text-4xl text-gray-300 mb-4 font-light">shopping_bag</span>
-                <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your bag is currently empty</p>
-                <p className="text-[10px] text-gray-400 mt-2 max-w-xs leading-relaxed">Customize your luxury item and click "Add to Bag" to begin the checkout process.</p>
-              </div>
-            ) : (
-              <div className="flex-1 p-6 space-y-4">
-                {cart.map((item) => (
-                  <div key={item.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative group flex gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
-                      <div className={`w-6 h-6 rotate-45 ${item.gemColor} border border-gray-200`}></div>
-                    </div>
-                    <div className="flex-1 min-w-0 pr-8">
-                      <h4 className="text-xs font-black uppercase text-gray-900 truncate mb-1">{item.title}</h4>
-                      <div className="text-[8px] uppercase tracking-wide text-gray-400 space-y-0.5">
-                        <p>{item.config.setting} setting · {item.config.material} · {item.config.width}mm</p>
-                        <p>{item.config.gemstone} · {item.gemCarat.toFixed(1)} ct</p>
-                        {item.engraving && <p className="text-amber-800 font-serif italic truncate">Engraved: "{item.engraving}"</p>}
-                      </div>
-                      <p className="text-xs font-black text-[#b08d26] mt-2">${item.price.toLocaleString()}</p>
-                    </div>
-                    <button 
-                      onClick={() => removeCartItem(item.id)}
-                      className="absolute top-4 right-4 w-6 h-6 rounded-full hover:bg-red-50 text-gray-300 hover:text-red-500 flex items-center justify-center transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-sm">delete</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* CART FOOTER */}
-            {cart.length > 0 && (
-              <div className="border-t border-gray-100 bg-white p-8 shrink-0 space-y-6">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order Total</span>
-                  <span className="text-2xl font-black text-black">
-                    ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}
-                  </span>
-                </div>
-                <button 
-                  onClick={() => setCheckoutStep('shipping')}
-                  className="w-full bg-[#b08d26] text-white hover:bg-black py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#b08d26]/10"
-                >
-                  Proceed to Checkout <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* SHIPPING FORM STEP */}
-        {checkoutStep === 'shipping' && (
-          <form onSubmit={handleCheckoutSubmit} className="flex-1 flex flex-col overflow-hidden bg-white">
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
-              <div>
-                <span className="text-[8px] font-black text-[#b08d26] uppercase tracking-widest">Step 2 of 3</span>
-                <h4 className="text-md font-black uppercase mt-1">Shipping & Billing</h4>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Email Address *</label>
-                  <input required type="email" placeholder="client@luxury.com" 
-                         value={shippingInfo.email} onChange={(e) => setShippingInfo({ ...shippingInfo, email: e.target.value })}
-                         className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
-                </div>
-                <div>
-                  <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Full Name *</label>
-                  <input required type="text" placeholder="ALEXANDRA SMITH" 
-                         value={shippingInfo.name} onChange={(e) => setShippingInfo({ ...shippingInfo, name: e.target.value.toUpperCase() })}
-                         className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
-                </div>
-                <div>
-                  <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Shipping Address *</label>
-                  <input required type="text" placeholder="128 FIFTH AVENUE, NEW YORK, NY" 
-                         value={shippingInfo.address} onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value.toUpperCase() })}
-                         className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
-                </div>
-                
-                <div className="border-t border-gray-100 pt-6">
-                  <h5 className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-4">Payment Credentials</h5>
-                  <div>
-                    <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Card Number *</label>
-                    <input required type="text" placeholder="4111 2222 3333 4444" 
-                           value={shippingInfo.card} onChange={(e) => setShippingInfo({ ...shippingInfo, card: e.target.value })}
-                           className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 mt-3">
-                    <div>
-                      <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Expiry *</label>
-                      <input required type="text" placeholder="MM/YY" 
-                             value={shippingInfo.expiry} onChange={(e) => setShippingInfo({ ...shippingInfo, expiry: e.target.value })}
-                             className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold text-center" />
-                    </div>
-                    <div>
-                      <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">CVC *</label>
-                      <input required type="text" placeholder="123" 
-                             value={shippingInfo.cvc} onChange={(e) => setShippingInfo({ ...shippingInfo, cvc: e.target.value })}
-                             className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold text-center" />
-                    </div>
-                  </div>
-                </div>
-              </div>
+        <div className="flex-1 overflow-y-auto flex flex-col bg-gray-50/50">
+          {cart.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-20 px-8 text-center">
+              <span className="material-symbols-outlined text-4xl text-gray-300 mb-4 font-light">shopping_cart</span>
+              <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your cart is currently empty</p>
+              <p className="text-[10px] text-gray-400 mt-2 max-w-xs leading-relaxed">Customize your luxury item and click "Add to Cart" to begin the checkout process.</p>
             </div>
+          ) : (
+            <div className="flex-1 p-6 space-y-4">
+              {cart.map((item) => (
+                <div key={item.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative group flex gap-4">
+                  <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
+                    <div className={`w-6 h-6 rotate-45 ${item.gemColor} border border-gray-200`}></div>
+                  </div>
+                  <div className="flex-1 min-w-0 pr-8">
+                    <h4 className="text-xs font-black uppercase text-gray-900 truncate mb-1">{item.title}</h4>
+                    <div className="text-[8px] uppercase tracking-wide text-gray-400 space-y-0.5">
+                      <p>{item.config.setting} setting · {item.config.material} · {item.config.width}mm</p>
+                      <p>{item.config.gemstone} · {item.gemCarat.toFixed(1)} ct</p>
+                      {item.engraving && <p className="text-amber-800 font-serif italic truncate">Engraved: "{item.engraving}"</p>}
+                    </div>
+                    <p className="text-xs font-black text-[#b08d26] mt-2">${item.price.toLocaleString()}</p>
+                  </div>
+                  <button 
+                    onClick={() => removeCartItem(item.id)}
+                    className="absolute top-4 right-4 w-6 h-6 rounded-full hover:bg-red-50 text-gray-300 hover:text-red-500 flex items-center justify-center transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
-            <div className="border-t border-gray-100 bg-white p-8 shrink-0 flex gap-4">
+          {/* CART FOOTER */}
+          {cart.length > 0 && (
+            <div className="border-t border-gray-100 bg-white p-8 shrink-0 space-y-6">
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order Total</span>
+                <span className="text-2xl font-black text-black">
+                  ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}
+                </span>
+              </div>
               <button 
-                type="button"
-                onClick={() => setCheckoutStep('cart')}
-                className="border border-gray-200 hover:bg-gray-50 px-5 py-4 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                onClick={() => navigate('/checkout')}
+                className="w-full bg-[#b08d26] text-white hover:bg-black py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#b08d26]/10"
               >
-                Back
-              </button>
-              <button 
-                type="submit"
-                className="flex-1 bg-black text-white hover:bg-[#b08d26] py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg"
-              >
-                Submit Order & Pay ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}
+                Proceed to Checkout <span className="material-symbols-outlined text-sm">arrow_forward</span>
               </button>
             </div>
-          </form>
-        )}
-
-        {/* ORDER SUCCESS STEP */}
-        {checkoutStep === 'success' && (
-          <div className="flex-1 overflow-y-auto flex flex-col p-8 items-center justify-center text-center bg-white">
-            <span className="material-symbols-outlined text-6xl text-green-600 bg-green-50 p-6 rounded-full animate-bounce mb-6">verified</span>
-            <span className="text-[9px] font-black text-[#b08d26] uppercase tracking-[0.2em] mb-1">Receipt Confirmed</span>
-            <h4 className="text-xl font-black uppercase text-gray-900 mb-3">Masterpiece Order Placed!</h4>
-            <p className="text-xs text-gray-400 max-w-xs leading-relaxed mb-8">Thank you, <span className="font-bold text-black">{shippingInfo.name}</span>. An invoice receipt has been dispatched to <span className="font-bold text-black">{shippingInfo.email}</span>. Your bespoke jewelry item is officially under craftsmanship.</p>
-
-            <div className="w-full bg-gray-50 border border-gray-100 p-6 rounded-2xl text-[9px] uppercase text-gray-500 font-bold text-left space-y-2 mb-8">
-              <div className="flex justify-between border-b border-gray-200/50 pb-2">
-                <span>Order Reference:</span>
-                <span className="text-black font-black">#SHM-{Math.floor(100000 + Math.random() * 900000)}</span>
-              </div>
-              <div className="flex justify-between border-b border-gray-200/50 pb-2">
-                <span>Shipment Destination:</span>
-                <span className="text-black font-black truncate max-w-[150px]">{shippingInfo.address}</span>
-              </div>
-              <div className="flex justify-between border-b border-gray-200/50 pb-2">
-                <span>Status:</span>
-                <span className="text-amber-800 font-black">Chế tác thủ công</span>
-              </div>
-              <div className="flex justify-between pt-2">
-                <span>Paid amount:</span>
-                <span className="text-[#b08d26] font-black text-xs">${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}</span>
-              </div>
-            </div>
-
-            <button 
-              onClick={() => {
-                clearWholeCart();
-                setShowCart(false);
-              }}
-              className="w-full bg-black text-white hover:bg-[#b08d26] py-4 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all shadow-lg"
-            >
-              Continue Designing
-            </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
     </div>

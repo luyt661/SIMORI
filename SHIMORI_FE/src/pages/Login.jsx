@@ -11,7 +11,7 @@ const Login = () => {
   const handleSignIn = (e) => {
     e.preventDefault();
     localStorage.setItem('shimori_logged_in', 'true');
-    toast.success('Đăng nhập thành công! Đang chuyển hướng...', {
+    toast.success('Login successful! Redirecting...', {
       style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
     });
     setTimeout(() => {

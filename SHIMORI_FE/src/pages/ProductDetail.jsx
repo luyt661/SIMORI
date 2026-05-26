@@ -13,9 +13,9 @@ import imgLifestyle from '../demo-images/lifestyle.png';
 const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 const MATERIAL_CONFIGS = {
-  'Titan':         { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40 },
-  'Bạc':           { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05 },
-  'Sắt không gỉ': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20 },
+  'Titanium':      { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40 },
+  'Silver':        { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05 },
+  'Stainless Steel': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20 },
 };
 
 const ProductDetail = () => {
@@ -36,7 +36,7 @@ const ProductDetail = () => {
     if (!isCustomized) return null;
     return {
       setting: queryParams.get('setting') || 'Prong',
-      material: queryParams.get('material') || 'Bạc',
+      material: queryParams.get('material') || 'Silver',
       gemstone: queryParams.get('gemstone') || 'Diamond',
       bandStyle: queryParams.get('bandStyle') || 'Plain',
       width: parseFloat(queryParams.get('width') || '2.5'),
@@ -103,7 +103,7 @@ const ProductDetail = () => {
     
     // Default mapped values
     let gemstone = 'Diamond';
-    let material = 'Bạc';
+    let material = 'Silver';
     let setting = 'Prong';
     let carat = 2.0;
 
@@ -116,7 +116,7 @@ const ProductDetail = () => {
     }
 
     if (product.specs?.Material?.includes('Gold') || product.specs?.Material?.includes('Yellow')) {
-      material = 'Bạc';
+      material = 'Silver';
     }
 
     const caratVal = parseFloat(product.specs?.['Carat Weight']);
@@ -157,7 +157,7 @@ const ProductDetail = () => {
       title: isCustomized ? `Bespoke Ring - Design #${Math.floor(1000 + Math.random() * 9000)}` : product.fullTitle,
       config: {
         setting: isCustomized ? (queryParams.get('setting') || 'Prong') : (product.id === 2 ? 'Halo' : product.id === 3 ? 'Channel' : 'Prong'),
-        material: isCustomized ? (queryParams.get('material') || 'Bạc') : 'Bạc',
+        material: isCustomized ? (queryParams.get('material') || 'Silver') : 'Silver',
         gemstone: isCustomized ? (queryParams.get('gemstone') || 'Diamond') : 'Diamond',
         bandStyle: isCustomized ? (queryParams.get('bandStyle') || 'Plain') : 'Plain',
         width: isCustomized ? parseFloat(queryParams.get('width') || '2.5') : 2.5,
@@ -175,7 +175,7 @@ const ProductDetail = () => {
     localStorage.setItem('shimori_cart', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
     
-    toast.success(`Đã thêm ${cartItem.title} vào Giỏ hàng!`, {
+    toast.success(`Added ${cartItem.title} to Cart!`, {
       style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
     });
 
@@ -296,10 +296,10 @@ const ProductDetail = () => {
                   className="flex-1 bg-[#facc15] text-black font-black py-3 rounded-xl uppercase tracking-[0.15em] text-[9px] hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg"
                 >
                   <span className="material-symbols-outlined text-sm">shopping_cart</span>
-                  Add to Bag
+                  Add to Cart
                 </button>
                 <button
-                  onClick={() => toast.success('Đã thêm sản phẩm vào danh sách yêu thích!')}
+                  onClick={() => toast.success('Added to Wishlist!')}
                   className="p-3 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
                 >
                   <span className="material-symbols-outlined text-sm">favorite</span>
