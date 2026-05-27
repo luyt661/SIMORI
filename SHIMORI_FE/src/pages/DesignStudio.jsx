@@ -60,8 +60,8 @@ const BACKEND_IDS = {
     '1': 1,
     '2': 2,
     '3': 3,
-    '4': 4,
-    '5': 5,
+    '4': 1,
+    '5': 1,
     'Prong': 1,
     'Bezel': 2,
     'Halo': 3,
@@ -439,7 +439,7 @@ const DesignStudio = () => {
           setAutoSaveStatus('idle');
           
           // Clean up URL (remove designId param from history)
-          window.history.replaceState({}, document.title, '/design');
+          window.history.replaceState({}, document.title, `/design?designId=${designIdParam}`);
           
           console.log('Loaded existing design:', designIdParam);
           toast.success('Đã tiếp tục thiết kế thành công!', {
@@ -450,8 +450,7 @@ const DesignStudio = () => {
           toast.error('Không tải được thiết kế, tạo draft mới.', {
             style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
           });
-          // Fallback: create draft
-          createNewDraft();
+          // Do not create a new draft here. Continue must keep using the existing designId.
         }
       };
       loadExistingDesign();
@@ -739,6 +738,21 @@ const DesignStudio = () => {
             {cart.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-[#facc15] text-black text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>
             )}
+          </button>
+
+          <button 
+            onClick={() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('shimori_cart');
+              localStorage.removeItem('shimori_saved_designs');
+              toast.success('Đã đăng xuất!', {
+                style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+              });
+              navigate('/login');
+            }}
+            className="border border-red-200 text-red-600 px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider hover:bg-red-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-xs">logout</span> Logout
           </button>
         </div>
       </header>

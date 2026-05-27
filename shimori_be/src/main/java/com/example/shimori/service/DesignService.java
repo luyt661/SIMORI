@@ -128,7 +128,7 @@ public class DesignService {
     }
 
     public List<UserDesign> getMyDrafts(User user) {
-        return userDesignRepository.findByUserIdAndStatus(
+        return userDesignRepository.findByUserIdAndStatusOrderByUpdatedAtDesc(
                 user.getId(),
                 "DRAFT"
         );

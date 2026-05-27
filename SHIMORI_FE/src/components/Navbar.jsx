@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const NAV_ITEMS = [
   { label: 'Collections', sectionId: 'collections' },
@@ -11,6 +12,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [cartCount, setCartCount] = useState(0);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const updateCount = () => {
@@ -27,10 +29,34 @@ const Navbar = () => {
       }
     };
 
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem('token');
+      setIsLoggedIn(!!token);
+    };
+
     updateCount();
+    checkLoginStatus();
+    
     window.addEventListener('storage', updateCount);
-    return () => window.removeEventListener('storage', updateCount);
+    window.addEventListener('storage', checkLoginStatus);
+    
+    return () => {
+      window.removeEventListener('storage', updateCount);
+      window.removeEventListener('storage', checkLoginStatus);
+    };
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('shimori_cart');
+    localStorage.removeItem('shimori_saved_designs');
+    setIsLoggedIn(false);
+    setCartCount(0);
+    toast.success('Đã đăng xuất!', {
+      style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+    });
+    navigate('/login');
+  };
 
   const handleNavClick = (e, sectionId) => {
     e.preventDefault();
@@ -80,12 +106,21 @@ const Navbar = () => {
           Design Now
         </button>
 
-        <Link
-          to="/login"
-          className="text-black px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:text-[#facc15] transition-all"
-        >
-          Sign In
-        </Link>
+        {isLoggedIn ? (
+          <button
+            onClick={handleLogout}
+            className="text-black px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest border border-red-200 hover:bg-red-50 hover:text-red-600 transition-all"
+          >
+            Logout
+          </button>
+        ) : (
+          <Link
+            to="/login"
+            className="text-black px-4 py-2.5 rounded-lg text-[11px] font-black uppercase tracking-widest hover:text-[#facc15] transition-all"
+          >
+            Sign In
+          </Link>
+        )}
 
         <div className="flex items-center gap-4 text-gray-400">
           <span 
