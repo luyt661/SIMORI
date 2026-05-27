@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { modelGroups } from '../models';
 import JewelryViewer from '../components/JewelryViewer';
 
-const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+const normalize = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 // Giá bạc: fetch real-time từ Coinbase (XAG = silver, USD/troy oz)
 // Nhẫn bạc ~8g, markup 4x cho fine jewelry craftsmanship
@@ -37,6 +37,85 @@ const PRICES = {
     'Split Shank': 900,
   },
   craftsmanship: 500,
+};
+
+
+
+const BACKEND_IDS = {
+  productId: 1,
+  materials: {
+    'Titan': 1,
+    'Bạc': 3,
+    'Sắt không gỉ': 1,
+  },
+  gemstones: {
+    'Diamond': 1,
+    'Ruby': 2,
+    'Sapphire': 3,
+    'Emerald': 1,
+    'Amethyst': 1,
+    'Topaz': 1,
+  },
+  settings: {
+    '1': 1,
+    '2': 2,
+    '3': 3,
+    '4': 4,
+    '5': 5,
+    'Prong': 1,
+    'Bezel': 2,
+    'Halo': 3,
+    'Tension': 1,
+    'Channel': 1,
+  },
+  bandStyles: {
+    'Plain': 1,
+    'Pavé': 2,
+    'Eternity': 3,
+    'Twisted': 1,
+    'Milgrain': 1,
+    'Split Shank': 1,
+  },
+  lightingPresets: {
+    studio: 1,
+    sunset: 1,
+    warehouse: 1,
+    dawn: 1,
+  },
+};
+
+const buildDesignPayload = ({ config, gemCarat, engraving, engravingFont, lightingPreset, totalPrice }) => {
+  const configJson = {
+    setting: config.setting,
+    material: config.material,
+    gemstone: config.gemstone,
+    bandStyle: config.bandStyle,
+    width: config.width,
+    gemCarat,
+    engraving,
+    engravingFont,
+    lightingPreset,
+  };
+  
+  console.log('buildDesignPayload config:', config);
+  console.log('buildDesignPayload configJson:', configJson);
+  
+  return {
+    productId: BACKEND_IDS.productId,
+    materialId: BACKEND_IDS.materials[config.material] || 1,
+    gemstoneId: BACKEND_IDS.gemstones[config.gemstone] || 1,
+    settingId: BACKEND_IDS.settings[config.setting] || 1,
+    bandStyleId: BACKEND_IDS.bandStyles[config.bandStyle] || 1,
+    lightingEnvironmentId: BACKEND_IDS.lightingPresets[lightingPreset] || 1,
+    ringSize: '7',
+    bandWidth: config.width,
+    gemstoneCarat: gemCarat,
+    engravingText: engraving || '',
+    engravingPrice: engraving ? 150 : 0,
+    configurationJson: JSON.stringify(configJson),
+    totalPrice,
+    previewImageUrl: null,
+  };
 };
 
 const MATERIAL_CONFIGS = {
@@ -99,7 +178,9 @@ const SidebarSection = ({ title, children, step }) => (
 
 const DesignStudio = () => {
   const navigate = useNavigate();
+  const hasInitialized = useRef(false); // Prevent double initialization
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
+  const [designId, setDesignId] = useState(null);
   const [config, setConfig] = useState({
     setting: defaultSetting,
     material: 'Titan',
@@ -132,6 +213,7 @@ const DesignStudio = () => {
 
   const [silverPriceOz, setSilverPriceOz] = useState(null);
   const [priceSource, setPriceSource] = useState('loading'); // 'live' | 'estimated'
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved'
 
   // Load URL query parameters on mount
   useEffect(() => {
@@ -196,9 +278,11 @@ const DesignStudio = () => {
 
   // Fetch silver price
   useEffect(() => {
-    axios.get('https://api.coinbase.com/v2/exchange-rates?currency=XAG')
-      .then((res) => {
-        const usdPerOz = parseFloat(res.data?.data?.rates?.USD);
+    fetch('https://api.coinbase.com/v2/exchange-rates?currency=XAG')
+      .then((res) => res.json())
+      .then((data) => {
+        const usdPerOz = parseFloat(data?.data?.rates?.USD);
+
         if (usdPerOz > 0) {
           setSilverPriceOz(usdPerOz);
           setPriceSource('live');
@@ -264,6 +348,175 @@ const DesignStudio = () => {
     priceDetails.reduce((sum, item) => sum + (item.price ?? 0), 0),
   [priceDetails]);
 
+  useEffect(() => {
+    // Prevent double initialization (especially in React StrictMode dev mode)
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      toast.error('Vui lòng đăng nhập để lưu thiết kế.', {
+        style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+      });
+      navigate('/login');
+      return;
+    }
+
+    // Check if URL has designId (continuing from MyDesigns)
+    const params = new URLSearchParams(window.location.search);
+    const designIdParam = params.get('designId');
+
+    if (designIdParam) {
+      // Load existing design from backend
+      const loadExistingDesign = async () => {
+        try {
+          const res = await api.get(`/designs/${designIdParam}`);
+          const design = res.data;
+          const cfg = JSON.parse(design.configurationJson || '{}');
+          
+          console.log('Design from backend:', design);
+          console.log('Parsed cfg:', cfg);
+          console.log('cfg.material:', cfg.material);
+          console.log('cfg.setting:', cfg.setting);
+          console.log('cfg.width:', cfg.width);
+          
+          // Load config - keep Stone Setting value compatible with current FE options,
+          // but fix Vietnamese material text that may be saved as B?c because of encoding.
+          const normalizeLoadedMaterial = (value) => {
+            if (!value) return config.material;
+
+            const raw = String(value);
+            if (raw === 'B?c' || raw === 'Bac') return 'Bạc';
+
+            const matched = materials.find((m) => normalize(m.name) === normalize(raw));
+            return matched?.name || config.material;
+          };
+
+          const normalizeLoadedSetting = (value) => {
+            if (!value) return config.setting;
+
+            const raw = String(value);
+            const matched = settings.find((s) => normalize(s.name) === normalize(raw));
+
+            // Important: do NOT convert "2" to "Bezel" here.
+            // Your current model options may be named 1,2,3,4,5, so keep that format.
+            return matched?.name || raw;
+          };
+
+          const normalizeLoadedGemstone = (value) => {
+            if (!value) return config.gemstone;
+            const raw = String(value);
+            const matched = gemstones.find((g) => normalize(g.name) === normalize(raw));
+            return matched?.name || config.gemstone;
+          };
+
+          const normalizeLoadedBandStyle = (value) => {
+            if (!value) return config.bandStyle;
+            const raw = String(value);
+            const matched = bandStyles.find((b) => normalize(b) === normalize(raw));
+            return matched || config.bandStyle;
+          };
+
+          const loadedConfig = {
+            setting: normalizeLoadedSetting(cfg.setting || design.setting?.name),
+            material: normalizeLoadedMaterial(cfg.material || design.material?.name),
+            gemstone: normalizeLoadedGemstone(cfg.gemstone || design.gemstone?.name),
+            bandStyle: normalizeLoadedBandStyle(cfg.bandStyle || design.bandStyle?.name),
+            width: cfg.width !== undefined ? cfg.width : config.width,
+          };
+          
+          console.log('loadedConfig:', loadedConfig);
+          
+          setConfig(loadedConfig);
+          setGemCarat(cfg.gemCarat || 2.0);
+          setEngraving(cfg.engraving || '');
+          setEngravingFont(cfg.engravingFont || 'Script');
+          setLightingPreset(cfg.lightingPreset || 'studio');
+          
+          // Set designId for autosave
+          setDesignId(parseInt(designIdParam));
+          setAutoSaveStatus('idle');
+          
+          // Clean up URL (remove designId param from history)
+          window.history.replaceState({}, document.title, '/design');
+          
+          console.log('Loaded existing design:', designIdParam);
+          toast.success('Đã tiếp tục thiết kế thành công!', {
+            style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+          });
+        } catch (err) {
+          console.error('Load design failed:', err);
+          toast.error('Không tải được thiết kế, tạo draft mới.', {
+            style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+          });
+          // Fallback: create draft
+          createNewDraft();
+        }
+      };
+      loadExistingDesign();
+      return;
+    }
+
+    // No designId in URL, create new draft
+    const createNewDraft = async () => {
+      try {
+        const payload = buildDesignPayload({
+          config,
+          gemCarat,
+          engraving,
+          engravingFont,
+          lightingPreset,
+          totalPrice,
+        });
+
+        const res = await api.post('/designs', payload);
+        setDesignId(res.data.id);
+        setAutoSaveStatus('idle');
+        console.log('Draft created:', res.data.id);
+      } catch (err) {
+        console.error('Create draft failed:', err);
+        toast.error('Không tạo được bản nháp thiết kế.', {
+          style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+        });
+      }
+    };
+
+    createNewDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!designId) return;
+
+    setAutoSaveStatus('saving');
+    const timeout = setTimeout(async () => {
+      try {
+        const payload = buildDesignPayload({
+          config,
+          gemCarat,
+          engraving,
+          engravingFont,
+          lightingPreset,
+          totalPrice,
+        });
+
+        await api.patch(`/designs/${designId}`, payload);
+        console.log('Autosaved design:', designId);
+        setAutoSaveStatus('saved');
+        
+        // Revert to idle after 2 seconds
+        const revertTimeout = setTimeout(() => setAutoSaveStatus('idle'), 2000);
+        return () => clearTimeout(revertTimeout);
+      } catch (err) {
+        console.error('Autosave failed:', err);
+        setAutoSaveStatus('idle');
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [config, gemCarat, engraving, engravingFont, lightingPreset, totalPrice, designId]);
+
   const settingModelUrl = useMemo(() => {
     const target = normalize(config.setting);
     const match = modelGroups.settings.find((m) => normalize(m.name) === target || normalize(m.key) === target);
@@ -310,23 +563,46 @@ const DesignStudio = () => {
   };
 
   // Local storage collection handlers
-  const saveToCollection = () => {
-    const newDesign = {
-      id: Date.now(),
-      config: { ...config },
-      gemCarat,
-      engraving,
-      engravingFont,
-      totalPrice,
-      date: new Date().toLocaleDateString('vi-VN'),
-    };
-    const updated = [newDesign, ...savedDesigns];
-    setSavedDesigns(updated);
-    localStorage.setItem('shimori_saved_designs', JSON.stringify(updated));
-    toast.success('Đã lưu thiết kế vào Bộ sưu tập của bạn!', {
-      icon: '💎',
-      style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
-    });
+  const saveToCollection = async () => {
+    if (!designId) {
+      toast.error('Bản nháp chưa sẵn sàng, thử lại sau vài giây.');
+      return;
+    }
+
+    try {
+      const payload = buildDesignPayload({
+        config,
+        gemCarat,
+        engraving,
+        engravingFont,
+        lightingPreset,
+        totalPrice,
+      });
+
+      await api.patch(`/designs/${designId}`, payload);
+
+      const newDesign = {
+        id: designId,
+        config: { ...config },
+        gemCarat,
+        engraving,
+        engravingFont,
+        totalPrice,
+        date: new Date().toLocaleDateString('vi-VN'),
+      };
+
+      const updated = [newDesign, ...savedDesigns.filter((d) => d.id !== designId)];
+      setSavedDesigns(updated);
+      localStorage.setItem('shimori_saved_designs', JSON.stringify(updated));
+
+      toast.success('Đã lưu thiết kế vào backend và Bộ sưu tập!', {
+        icon: '💎',
+        style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+      });
+    } catch (err) {
+      console.error('Save design failed:', err);
+      toast.error('Lưu thiết kế thất bại.');
+    }
   };
 
   const deleteSavedDesign = (id) => {
@@ -341,7 +617,9 @@ const DesignStudio = () => {
     setGemCarat(design.gemCarat);
     setEngraving(design.engraving || '');
     setEngravingFont(design.engravingFont || 'Script');
+    setDesignId(design.id); // Update designId so autosave patches this design
     setShowSavedModal(false);
+    setAutoSaveStatus('idle');
     toast.success('Đã tải thiết kế thành công!');
   };
 
@@ -417,9 +695,21 @@ const DesignStudio = () => {
       <Toaster position="bottom-right" reverseOrder={false} />
 
       <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-8 shrink-0 z-[130]">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
-          <span className="material-symbols-outlined text-2xl">diamond</span>
-          <h2 className="text-xl font-extrabold tracking-tighter uppercase">SHIMORI</h2>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
+            <span className="material-symbols-outlined text-2xl">diamond</span>
+            <h2 className="text-xl font-extrabold tracking-tighter uppercase">SHIMORI</h2>
+          </div>
+          {autoSaveStatus !== 'idle' && (
+            <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full transition-all ${
+              autoSaveStatus === 'saving' 
+                ? 'bg-yellow-50 text-yellow-700' 
+                : 'bg-green-50 text-green-700'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${autoSaveStatus === 'saving' ? 'bg-yellow-600' : 'bg-green-600'}`}></span>
+              {autoSaveStatus === 'saving' ? 'Saving...' : 'Saved!'}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-6">
           <button 
@@ -682,7 +972,7 @@ const DesignStudio = () => {
               <span>Refractive Index: {config.gemstone === 'Diamond' ? '2.417' : '1.760'}</span>
             </div>
             <div className="flex gap-6">
-              <span className="text-black font-black">Design ID: LUX-882-99</span>
+              <span className="text-black font-black">Design ID: {designId ? `#${designId}` : 'Creating...'}</span>
               <span>© 2026 Unified 3D Studio</span>
             </div>
           </div>
