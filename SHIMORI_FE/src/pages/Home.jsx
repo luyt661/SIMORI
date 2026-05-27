@@ -64,8 +64,11 @@ const Home = () => {
             >
               Start Designing
             </button>
-            <button className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all">
-              View Gallery
+            <button
+              onClick={() => navigate('/my-designs')}
+              className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all"
+            >
+              My Designs
             </button>
           </div>
         </div>

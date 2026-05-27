@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { modelGroups } from '../models';
 import JewelryViewer from '../components/JewelryViewer';
 
-const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+const normalize = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 // Giá bạc: fetch real-time từ Coinbase (XAG = silver, USD/troy oz)
 // Nhẫn bạc ~8g, markup 4x cho fine jewelry craftsmanship
@@ -18,7 +18,9 @@ const SILVER_FALLBACK_OZ = 33.0; // fallback nếu API lỗi (USD/oz)
 const PRICES = {
   material: {
     'Titanium': 1_200,       // industrial titanium + craftsmanship
+    'Titan': 1_200,
     'Stainless Steel': 550,  // stainless steel + craftsmanship
+    'Sắt không gỉ': 550
   },
   gemstone: {
     'Diamond': 10_800,
@@ -39,17 +41,103 @@ const PRICES = {
   craftsmanship: 500,
 };
 
+
+
+const BACKEND_IDS = {
+  productId: 1,
+  materials: {
+    'Titanium': 1,
+    'Titan': 1,
+    'Silver': 3,
+    'Bạc': 3,
+    'Stainless Steel': 1,
+    'Sắt không gỉ': 1,
+  },
+  gemstones: {
+    'Diamond': 1,
+    'Ruby': 2,
+    'Sapphire': 3,
+    'Emerald': 1,
+    'Amethyst': 1,
+    'Topaz': 1,
+  },
+  settings: {
+    '1': 1,
+    '2': 2,
+    '3': 3,
+    '4': 1,
+    '5': 1,
+    'Prong': 1,
+    'Bezel': 2,
+    'Halo': 3,
+    'Tension': 1,
+    'Channel': 1,
+  },
+  bandStyles: {
+    'Plain': 1,
+    'Pavé': 2,
+    'Eternity': 3,
+    'Twisted': 1,
+    'Milgrain': 1,
+    'Split Shank': 1,
+  },
+  lightingPresets: {
+    studio: 1,
+    sunset: 1,
+    warehouse: 1,
+    dawn: 1,
+  },
+};
+
+const buildDesignPayload = ({ config, designName, gemCarat, engraving, engravingFont, lightingPreset, totalPrice }) => {
+  const configJson = {
+    setting: config.setting,
+    material: config.material,
+    gemstone: config.gemstone,
+    bandStyle: config.bandStyle,
+    width: config.width,
+    gemCarat,
+    engraving,
+    engravingFont,
+    lightingPreset,
+    designName,
+  };
+  
+  console.log('buildDesignPayload config:', config);
+  console.log('buildDesignPayload configJson:', configJson);
+  
+  return {
+    productId: BACKEND_IDS.productId,
+    materialId: BACKEND_IDS.materials[config.material] || 1,
+    gemstoneId: BACKEND_IDS.gemstones[config.gemstone] || 1,
+    settingId: BACKEND_IDS.settings[config.setting] || 1,
+    bandStyleId: BACKEND_IDS.bandStyles[config.bandStyle] || 1,
+    lightingEnvironmentId: BACKEND_IDS.lightingPresets[lightingPreset] || 1,
+    ringSize: '7',
+    bandWidth: config.width,
+    gemstoneCarat: gemCarat,
+    engravingText: engraving || '',
+    engravingPrice: engraving ? 150 : 0,
+    configurationJson: JSON.stringify(configJson),
+    totalPrice,
+    previewImageUrl: null,
+  };
+};
+
 const MATERIAL_CONFIGS = {
   'Titanium':      { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40, displayColor: 'from-[#374151] to-[#6b7280]' },
+  'Titan':         { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40, displayColor: 'from-[#374151] to-[#6b7280]' },
   'Silver':        { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05, displayColor: 'from-[#cbd5e1] to-[#f8fafc]' },
+  'Bạc':           { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05, displayColor: 'from-[#cbd5e1] to-[#f8fafc]' },
   'Stainless Steel': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20, displayColor: 'from-[#52525b] to-[#a1a1aa]' },
+  'Sắt không gỉ': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20, displayColor: 'from-[#52525b] to-[#a1a1aa]' },
 };
 
 const LIGHTING_PRESETS = [
-  { id: 'studio', label: 'Luxury Studio', icon: 'wb_sunny', desc: 'Sharp, top-tier reflections' },
-  { id: 'sunset', label: 'Warm Sunset', icon: 'flare', desc: 'Warm, golden sunset reflections' },
-  { id: 'warehouse', label: 'Daylight Showroom', icon: 'light_mode', desc: 'Realistic outdoor daylight' },
-  { id: 'dawn', label: 'Dawn Glow', icon: 'filter_drama', desc: 'Soft, elegant early morning glow' }
+  { id: 'studio', label: 'Luxury Studio', icon: 'wb_sunny', desc: 'Sắc nét, phản chiếu đỉnh cao' },
+  { id: 'sunset', label: 'Warm Sunset', icon: 'flare', desc: 'Ấm áp, phản chiếu hoàng hôn vàng' },
+  { id: 'warehouse', label: 'Daylight Showroom', icon: 'light_mode', desc: 'Ánh sáng ngoài trời chân thực' },
+  { id: 'dawn', label: 'Dawn Glow', icon: 'filter_drama', desc: 'Dịu nhẹ, thanh lịch buổi sớm' }
 ];
 
 const fallbackSettings = [
@@ -99,9 +187,11 @@ const SidebarSection = ({ title, children, step }) => (
 
 const DesignStudio = () => {
   const navigate = useNavigate();
+  const hasInitialized = useRef(false); // Prevent double initialization
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [gemSelected, setGemSelected] = useState(false);
+  const [designId, setDesignId] = useState(null);
   const [config, setConfig] = useState({
     setting: defaultSetting,
     material: 'Titanium',
@@ -124,9 +214,19 @@ const DesignStudio = () => {
   // Cart & Checkout
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState('cart'); // 'cart' | 'shipping' | 'success'
+  const [shippingInfo, setShippingInfo] = useState({
+    email: '',
+    name: '',
+    address: '',
+    card: '',
+    expiry: '',
+    cvc: '',
+  });
 
   const [silverPriceOz, setSilverPriceOz] = useState(null);
   const [priceSource, setPriceSource] = useState('loading'); // 'live' | 'estimated'
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // 'idle' | 'saving' | 'saved'
 
   // Load URL query parameters on mount
   useEffect(() => {
@@ -140,6 +240,7 @@ const DesignStudio = () => {
     const engravingParam = params.get('engraving');
     const fontParam = params.get('font');
     const lightingParam = params.get('lighting');
+    const nameParam = params.get('name');
 
     const newConfig = { ...config };
     let changed = false;
@@ -177,27 +278,29 @@ const DesignStudio = () => {
       setEngraving(engravingParam);
       setEngravingInput(engravingParam);
     }
+    if (nameParam) {
+      setDesignName(nameParam);
+    }
     if (fontParam) {
       if (['Serif', 'Sans', 'Script'].includes(fontParam)) setEngravingFont(fontParam);
     }
     if (lightingParam) {
       if (['studio', 'sunset', 'warehouse', 'dawn'].includes(lightingParam)) setLightingPreset(lightingParam);
     }
-    const nameParam = params.get('name');
-    if (nameParam) {
-      setDesignName(nameParam);
-    }
     const openCartParam = params.get('openCart');
     if (openCartParam === 'true') {
       setShowCart(true);
+      setCheckoutStep('cart');
     }
   }, []);
 
   // Fetch silver price
   useEffect(() => {
-    axios.get('https://api.coinbase.com/v2/exchange-rates?currency=XAG')
-      .then((res) => {
-        const usdPerOz = parseFloat(res.data?.data?.rates?.USD);
+    fetch('https://api.coinbase.com/v2/exchange-rates?currency=XAG')
+      .then((res) => res.json())
+      .then((data) => {
+        const usdPerOz = parseFloat(data?.data?.rates?.USD);
+
         if (usdPerOz > 0) {
           setSilverPriceOz(usdPerOz);
           setPriceSource('live');
@@ -232,7 +335,7 @@ const DesignStudio = () => {
 
   const priceDetails = useMemo(() => {
     const widthMultiplier = config.width / 2.5;
-    const baseMatPrice = config.material === 'Silver'
+    const baseMatPrice = (config.material === 'Bạc' || config.material === 'Silver')
       ? silverMaterialPrice
       : Math.round((PRICES.material[config.material] ?? 0) * widthMultiplier);
     
@@ -241,7 +344,7 @@ const DesignStudio = () => {
     const scaledGemPrice = Math.round(gemstoneBasePrice * (gemCarat / 2.0));
 
     const details = [
-      { label: 'Base Metal',    value: `${config.material} · ${config.width}mm`,  price: baseMatPrice,                                    isLive: config.material === 'Silver' && priceSource === 'live' },
+      { label: 'Base Metal',    value: `${config.material} · ${config.width}mm`,  price: baseMatPrice,                                    isLive: (config.material === 'Bạc' || config.material === 'Silver') && priceSource === 'live' },
       { label: 'Center Stone',  value: `${config.gemstone} · ${gemCarat.toFixed(1)} ct`, price: scaledGemPrice,                                 isLive: false },
       { label: 'Band Style',    value: config.bandStyle,                           price: PRICES.bandStyle[config.bandStyle] ?? 0,         isLive: false },
       { label: 'Craftsmanship', value: 'Handcrafted Artistry',                     price: PRICES.craftsmanship,                            isLive: false },
@@ -262,6 +365,178 @@ const DesignStudio = () => {
   const totalPrice = useMemo(() =>
     priceDetails.reduce((sum, item) => sum + (item.price ?? 0), 0),
   [priceDetails]);
+
+  useEffect(() => {
+    // Prevent double initialization (especially in React StrictMode dev mode)
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      toast.error('Vui lòng đăng nhập để lưu thiết kế.', {
+        style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+      });
+      navigate('/login');
+      return;
+    }
+
+    // Check if URL has designId (continuing from MyDesigns)
+    const params = new URLSearchParams(window.location.search);
+    const designIdParam = params.get('designId');
+
+    if (designIdParam) {
+      // Load existing design from backend
+      const loadExistingDesign = async () => {
+        try {
+          const res = await api.get(`/designs/${designIdParam}`);
+          const design = res.data;
+          const cfg = JSON.parse(design.configurationJson || '{}');
+          
+          console.log('Design from backend:', design);
+          console.log('Parsed cfg:', cfg);
+          console.log('cfg.material:', cfg.material);
+          console.log('cfg.setting:', cfg.setting);
+          console.log('cfg.width:', cfg.width);
+          
+          // Load config - keep Stone Setting value compatible with current FE options,
+          // but fix Vietnamese material text that may be saved as B?c because of encoding.
+          const normalizeLoadedMaterial = (value) => {
+            if (!value) return config.material;
+
+            const raw = String(value);
+            if (raw === 'B?c' || raw === 'Bac') return 'Silver';
+
+            const matched = materials.find((m) => normalize(m.name) === normalize(raw));
+            return matched?.name || config.material;
+          };
+
+          const normalizeLoadedSetting = (value) => {
+            if (!value) return config.setting;
+
+            const raw = String(value);
+            const matched = settings.find((s) => normalize(s.name) === normalize(raw));
+
+            // Important: do NOT convert "2" to "Bezel" here.
+            // Your current model options may be named 1,2,3,4,5, so keep that format.
+            return matched?.name || raw;
+          };
+
+          const normalizeLoadedGemstone = (value) => {
+            if (!value) return config.gemstone;
+            const raw = String(value);
+            const matched = gemstones.find((g) => normalize(g.name) === normalize(raw));
+            return matched?.name || config.gemstone;
+          };
+
+          const normalizeLoadedBandStyle = (value) => {
+            if (!value) return config.bandStyle;
+            const raw = String(value);
+            const matched = bandStyles.find((b) => normalize(b) === normalize(raw));
+            return matched || config.bandStyle;
+          };
+
+          const loadedConfig = {
+            setting: normalizeLoadedSetting(cfg.setting || design.setting?.name),
+            material: normalizeLoadedMaterial(cfg.material || design.material?.name),
+            gemstone: normalizeLoadedGemstone(cfg.gemstone || design.gemstone?.name),
+            bandStyle: normalizeLoadedBandStyle(cfg.bandStyle || design.bandStyle?.name),
+            width: cfg.width !== undefined ? cfg.width : config.width,
+          };
+          
+          console.log('loadedConfig:', loadedConfig);
+          
+          setConfig(loadedConfig);
+          setGemCarat(cfg.gemCarat || 2.0);
+          setDesignName(cfg.designName || cfg.name || design.name || 'Master Piece #4491');
+          setEngraving(cfg.engraving || '');
+          setEngravingInput(cfg.engraving || '');
+          setEngravingFont(cfg.engravingFont || 'Script');
+          setLightingPreset(cfg.lightingPreset || 'studio');
+          
+          // Set designId for autosave
+          setDesignId(parseInt(designIdParam));
+          setAutoSaveStatus('idle');
+          
+          // Clean up URL (remove designId param from history)
+          window.history.replaceState({}, document.title, `/design?designId=${designIdParam}`);
+          
+          console.log('Loaded existing design:', designIdParam);
+          toast.success('Đã tiếp tục thiết kế thành công!', {
+            style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+          });
+        } catch (err) {
+          console.error('Load design failed:', err);
+          toast.error('Không tải được thiết kế, tạo draft mới.', {
+            style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+          });
+          // Do not create a new draft here. Continue must keep using the existing designId.
+        }
+      };
+      loadExistingDesign();
+      return;
+    }
+
+    // No designId in URL, create new draft
+    const createNewDraft = async () => {
+      try {
+        const payload = buildDesignPayload({
+          config,
+          designName,
+          gemCarat,
+          engraving,
+          engravingFont,
+          lightingPreset,
+          totalPrice,
+        });
+
+        const res = await api.post('/designs', payload);
+        setDesignId(res.data.id);
+        setAutoSaveStatus('idle');
+        console.log('Draft created:', res.data.id);
+      } catch (err) {
+        console.error('Create draft failed:', err);
+        toast.error('Không tạo được bản nháp thiết kế.', {
+          style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+        });
+      }
+    };
+
+    createNewDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!designId) return;
+
+    setAutoSaveStatus('saving');
+    const timeout = setTimeout(async () => {
+      try {
+        const payload = buildDesignPayload({
+          config,
+          designName,
+          gemCarat,
+          engraving,
+          engravingFont,
+          lightingPreset,
+          totalPrice,
+        });
+
+        await api.patch(`/designs/${designId}`, payload);
+        console.log('Autosaved design:', designId);
+        setAutoSaveStatus('saved');
+        
+        // Revert to idle after 2 seconds
+        const revertTimeout = setTimeout(() => setAutoSaveStatus('idle'), 2000);
+        return () => clearTimeout(revertTimeout);
+      } catch (err) {
+        console.error('Autosave failed:', err);
+        setAutoSaveStatus('idle');
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [config, designName, gemCarat, engraving, engravingFont, lightingPreset, totalPrice, designId]);
 
   const settingModelUrl = useMemo(() => {
     const target = normalize(config.setting);
@@ -300,54 +575,80 @@ const DesignStudio = () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
     navigator.clipboard.writeText(shareUrl)
       .then(() => {
-        toast.success('Your design link has been copied!', {
+        toast.success('Liên kết thiết kế của bạn đã được sao chép!', {
           style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
         });
       })
       .catch(() => {
-        toast.error('Could not copy link.');
+        toast.error('Không thể sao chép liên kết.');
       });
   };
 
   // Local storage collection handlers
-  const saveToCollection = () => {
-    const newDesign = {
-      id: Date.now(),
-      name: designName,
-      config: { ...config },
-      gemCarat,
-      engraving,
-      engravingFont,
-      lightingPreset,
-      totalPrice,
-      date: new Date().toLocaleDateString('en-US'),
-    };
-    const updated = [newDesign, ...savedDesigns];
-    setSavedDesigns(updated);
-    localStorage.setItem('shimori_saved_designs', JSON.stringify(updated));
-    toast.success('Design saved to your Collection!', {
-      icon: '💎',
-      style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
-    });
+  const saveToCollection = async () => {
+    if (!designId) {
+      toast.error('Bản nháp chưa sẵn sàng, thử lại sau vài giây.');
+      return;
+    }
+
+    try {
+      const payload = buildDesignPayload({
+        config,
+        designName,
+        gemCarat,
+        engraving,
+        engravingFont,
+        lightingPreset,
+        totalPrice,
+      });
+
+      await api.patch(`/designs/${designId}`, payload);
+
+      const newDesign = {
+        id: designId,
+        name: designName,
+        config: { ...config },
+        gemCarat,
+        engraving,
+        engravingFont,
+        lightingPreset,
+        totalPrice,
+        date: new Date().toLocaleDateString('vi-VN'),
+      };
+
+      const updated = [newDesign, ...savedDesigns.filter((d) => d.id !== designId)];
+      setSavedDesigns(updated);
+      localStorage.setItem('shimori_saved_designs', JSON.stringify(updated));
+
+      toast.success('Đã lưu thiết kế vào backend và Bộ sưu tập!', {
+        icon: '💎',
+        style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+      });
+    } catch (err) {
+      console.error('Save design failed:', err);
+      toast.error('Lưu thiết kế thất bại.');
+    }
   };
 
   const deleteSavedDesign = (id) => {
     const updated = savedDesigns.filter((d) => d.id !== id);
     setSavedDesigns(updated);
     localStorage.setItem('shimori_saved_designs', JSON.stringify(updated));
-    toast.success('Design deleted successfully.');
+    toast.success('Đã xóa thiết kế.');
   };
 
   const loadSavedDesign = (design) => {
     setConfig(design.config);
     setGemCarat(design.gemCarat);
+    setDesignName(design.name || 'Master Piece #4491');
     setEngraving(design.engraving || '');
     setEngravingInput(design.engraving || '');
     setEngravingFont(design.engravingFont || 'Script');
     setLightingPreset(design.lightingPreset || 'studio');
-    if (design.name) setDesignName(design.name);
+    setDesignId(design.id); // Update designId so autosave patches this design
     setShowSavedModal(false);
-    toast.success('Design loaded successfully!');
+    setAutoSaveStatus('idle');
+    toast.success('Đã tải thiết kế thành công!');
   };
 
   // Cart & Checkout handlers
@@ -366,7 +667,8 @@ const DesignStudio = () => {
     setCart(updated);
     localStorage.setItem('shimori_cart', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
-    toast.success('Added ring to Cart!');
+    toast.success('Đã thêm nhẫn vào Giỏ hàng!');
+    setCheckoutStep('cart');
     setShowCart(true);
   };
 
@@ -401,7 +703,15 @@ const DesignStudio = () => {
     window.dispatchEvent(new Event('storage'));
   };
 
-
+  const handleCheckoutSubmit = (e) => {
+    e.preventDefault();
+    if (!shippingInfo.email || !shippingInfo.name || !shippingInfo.address || !shippingInfo.card) {
+      toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+      return;
+    }
+    setCheckoutStep('success');
+    toast.success('Thanh toán thành công! Đơn hàng của bạn đang được chế tác.');
+  };
 
   const clearWholeCart = () => {
     setCart([]);
@@ -414,9 +724,21 @@ const DesignStudio = () => {
       <Toaster position="bottom-right" reverseOrder={false} />
 
       <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-8 shrink-0 z-[130]">
-        <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
-          <span className="material-symbols-outlined text-2xl">diamond</span>
-          <h2 className="text-xl font-extrabold tracking-tighter uppercase">SHIMORI</h2>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
+            <span className="material-symbols-outlined text-2xl">diamond</span>
+            <h2 className="text-xl font-extrabold tracking-tighter uppercase">SHIMORI</h2>
+          </div>
+          {autoSaveStatus !== 'idle' && (
+            <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full transition-all ${
+              autoSaveStatus === 'saving' 
+                ? 'bg-yellow-50 text-yellow-700' 
+                : 'bg-green-50 text-green-700'
+            }`}>
+              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${autoSaveStatus === 'saving' ? 'bg-yellow-600' : 'bg-green-600'}`}></span>
+              {autoSaveStatus === 'saving' ? 'Saving...' : 'Saved!'}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-6">
           <button 
@@ -438,14 +760,29 @@ const DesignStudio = () => {
           </button>
 
           <button 
-            onClick={() => { setShowCart(true); }}
+            onClick={() => { setCheckoutStep('cart'); setShowCart(true); }}
             className="bg-black text-white px-5 py-2 rounded text-[9px] font-black uppercase tracking-widest hover:bg-[#b08d26] transition-colors flex items-center gap-2 relative"
           >
-            <span className="material-symbols-outlined text-xs">shopping_cart</span> 
-            Cart
+            <span className="material-symbols-outlined text-xs">shopping_bag</span> 
+            Bag
             {cart.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-[#facc15] text-black text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>
             )}
+          </button>
+
+          <button 
+            onClick={() => {
+              localStorage.removeItem('token');
+              localStorage.removeItem('shimori_cart');
+              localStorage.removeItem('shimori_saved_designs');
+              toast.success('Đã đăng xuất!', {
+                style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+              });
+              navigate('/login');
+            }}
+            className="border border-red-200 text-red-600 px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider hover:bg-red-50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-xs">logout</span> Logout
           </button>
         </div>
       </header>
@@ -656,38 +993,25 @@ const DesignStudio = () => {
           </div>
 
           <div className="flex-1 flex flex-col items-center justify-center p-10 min-h-[600px] shrink-0">
-            {showPreview ? (
-              <div className="relative group flex flex-col items-center">
-                <div style={{ width: 'min(70vw, 900px)', height: 'min(70vw, 600px)' }}>
-                  <JewelryViewer
-                    ringUrl={settingModelUrl}
-                    gemUrl={gemSelected ? gemModelUrl : null}
-                    materialProps={materialProps}
-                    ringWidthScale={parseFloat(widthScale)}
-                    gemstoneName={config.gemstone}
-                    gemCarat={gemCarat}
-                    lightingPreset={lightingPreset}
-                    engraving={engraving}
-                    engravingFont={engravingFont}
-                    bandStyle={config.bandStyle}
-                  />
-                </div>
-                <div className="mt-8 flex flex-col items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100 cursor-pointer">
-                    <span className="material-symbols-outlined text-[#b08d26]">open_with</span>
-                  </div>
-                  <span className="text-[9px] font-black text-[#b08d26] uppercase">Explore 360°</span>
-                </div>
+            <div className="relative group flex flex-col items-center">
+              <div style={{ width: 'min(70vw, 900px)', height: 'min(70vw, 600px)' }}>
+                <JewelryViewer
+                  ringUrl={settingModelUrl}
+                  gemUrl={gemModelUrl}
+                  materialProps={materialProps}
+                  ringWidthScale={parseFloat(widthScale)}
+                  gemstoneName={config.gemstone}
+                  gemCarat={gemCarat}
+                  lightingPreset={lightingPreset}
+                />
               </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center gap-4">
-                <div className="w-40 h-40 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center border-2 border-dashed border-gray-200">
-                  <span className="material-symbols-outlined text-7xl text-gray-200">diamond</span>
+              <div className="mt-8 flex flex-col items-center gap-2">
+                <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100 cursor-pointer">
+                  <span className="material-symbols-outlined text-[#b08d26]">open_with</span>
                 </div>
-                <p className="text-base font-black text-gray-300 uppercase tracking-[0.3em]">Choose Your Ring</p>
-                <p className="text-[10px] text-gray-300 uppercase tracking-widest font-bold">Select a stone setting to begin</p>
+                <span className="text-[9px] font-black text-[#b08d26] uppercase">Explore 360°</span>
               </div>
-            )}
+            </div>
           </div>
 
           <div className="bg-white border-t border-gray-100 px-10 py-8 flex gap-8 shrink-0 overflow-x-auto no-scrollbar">
@@ -697,7 +1021,7 @@ const DesignStudio = () => {
             </div>
             <div className="flex gap-4">
               {gemstones.map((gem) => (
-                <button key={gem.name} onClick={() => { setConfig({...config, gemstone: gem.name}); setGemSelected(true); setShowPreview(true); }}
+                <button key={gem.name} onClick={() => setConfig({...config, gemstone: gem.name})}
                   className={`flex flex-col items-center min-w-[150px] p-5 rounded-xl border transition-all ${config.gemstone === gem.name ? 'border-[#b08d26] bg-gray-50' : 'border-transparent hover:bg-gray-50'}`}>
                   <div className={`w-4 h-4 rotate-45 ${gem.color} border border-gray-200 mb-3`}></div>
                   <span className="text-[9px] font-black uppercase tracking-tighter text-center">{gem.label} {gem.name}</span>
@@ -713,7 +1037,7 @@ const DesignStudio = () => {
               <span>Refractive Index: {config.gemstone === 'Diamond' ? '2.417' : '1.760'}</span>
             </div>
             <div className="flex gap-6">
-              <span className="text-black font-black">Design ID: LUX-882-99</span>
+              <span className="text-black font-black">Design ID: {designId ? `#${designId}` : 'Creating...'}</span>
               <span>© 2026 Unified 3D Studio</span>
             </div>
           </div>
@@ -777,22 +1101,24 @@ const DesignStudio = () => {
             </button>
           </div>
 
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-4">
             <button
               onClick={addItemToCart}
-              title="Add to Cart"
-              className="bg-black text-white w-14 h-14 rounded-xl flex items-center justify-center hover:bg-[#b08d26] transition-all shadow-lg shadow-black/10 cursor-pointer"
+              className="bg-black text-white px-8 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] hover:bg-[#b08d26] transition-all"
             >
-              <span className="material-symbols-outlined text-xl">shopping_cart</span>
+              Add To Bag
             </button>
 
             <button
               onMouseEnter={() => setShowPriceBreakdown(true)}
               onMouseLeave={() => setShowPriceBreakdown(false)}
               onClick={proceedToProductDetail}
-              className="bg-[#b08d26] text-white px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10 cursor-pointer"
+              className="bg-[#b08d26] text-white px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10"
             >
-              View Details & Order <span className="material-symbols-outlined text-base">arrow_forward</span>
+              Xem Chi Tiết & Đặt Hàng
+              <span className="material-symbols-outlined text-base">
+                arrow_forward
+              </span>
             </button>
           </div>
         </div>
@@ -827,9 +1153,7 @@ const DesignStudio = () => {
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{d.date}</span>
-                            <h4 className="text-sm font-black uppercase mt-1 truncate max-w-[220px]">
-                              {d.name ? `Bespoke Ring - ${d.name}` : `Bespoke Ring #${d.id.toString().slice(-4)}`}
-                            </h4>
+                            <h4 className="text-sm font-black uppercase mt-1">Bespoke Ring #{d.id.toString().slice(-4)}</h4>
                           </div>
                           <span className="text-sm font-black text-[#b08d26]">${d.totalPrice.toLocaleString()}</span>
                         </div>
@@ -869,8 +1193,8 @@ const DesignStudio = () => {
       <div className={`fixed inset-y-0 right-0 w-[450px] bg-white z-[180] shadow-[0_0_60px_rgba(0,0,0,0.15)] flex flex-col transition-transform duration-500 transform ${showCart ? 'translate-x-0' : 'translate-x-full'}`}>
         <header className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#b08d26]">shopping_cart</span>
-            <h3 className="text-md font-black uppercase tracking-wider">Your Shopping Cart</h3>
+            <span className="material-symbols-outlined text-[#b08d26]">shopping_bag</span>
+            <h3 className="text-md font-black uppercase tracking-wider">Your Shopping Bag</h3>
             <span className="bg-gray-100 text-gray-700 text-[9px] px-2 py-0.5 rounded-full font-bold ml-2">{cart.length}</span>
           </div>
           <button onClick={() => setShowCart(false)} className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
@@ -879,58 +1203,172 @@ const DesignStudio = () => {
         </header>
 
         {/* CART STEP CONTENT */}
-        <div className="flex-1 overflow-y-auto flex flex-col bg-gray-50/50">
-          {cart.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-20 px-8 text-center">
-              <span className="material-symbols-outlined text-4xl text-gray-300 mb-4 font-light">shopping_cart</span>
-              <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your cart is currently empty</p>
-              <p className="text-[10px] text-gray-400 mt-2 max-w-xs leading-relaxed">Customize your luxury item and click "Add to Cart" to begin the checkout process.</p>
-            </div>
-          ) : (
-            <div className="flex-1 p-6 space-y-4">
-              {cart.map((item) => (
-                <div key={item.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative group flex gap-4">
-                  <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
-                    <div className={`w-6 h-6 rotate-45 ${item.gemColor} border border-gray-200`}></div>
-                  </div>
-                  <div className="flex-1 min-w-0 pr-8">
-                    <h4 className="text-xs font-black uppercase text-gray-900 truncate mb-1">{item.title}</h4>
-                    <div className="text-[8px] uppercase tracking-wide text-gray-400 space-y-0.5">
-                      <p>{item.config.setting} setting · {item.config.material} · {item.config.width}mm</p>
-                      <p>{item.config.gemstone} · {item.gemCarat.toFixed(1)} ct</p>
-                      {item.engraving && <p className="text-amber-800 font-serif italic truncate">Engraved: "{item.engraving}"</p>}
-                    </div>
-                    <p className="text-xs font-black text-[#b08d26] mt-2">${item.price.toLocaleString()}</p>
-                  </div>
-                  <button 
-                    onClick={() => removeCartItem(item.id)}
-                    className="absolute top-4 right-4 w-6 h-6 rounded-full hover:bg-red-50 text-gray-300 hover:text-red-500 flex items-center justify-center transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-sm">delete</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* CART FOOTER */}
-          {cart.length > 0 && (
-            <div className="border-t border-gray-100 bg-white p-8 shrink-0 space-y-6">
-              <div className="flex justify-between items-baseline">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order Total</span>
-                <span className="text-2xl font-black text-black">
-                  ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}
-                </span>
+        {checkoutStep === 'cart' && (
+          <div className="flex-1 overflow-y-auto flex flex-col bg-gray-50/50">
+            {cart.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-20 px-8 text-center">
+                <span className="material-symbols-outlined text-4xl text-gray-300 mb-4 font-light">shopping_bag</span>
+                <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your bag is currently empty</p>
+                <p className="text-[10px] text-gray-400 mt-2 max-w-xs leading-relaxed">Customize your luxury item and click "Add to Bag" to begin the checkout process.</p>
               </div>
+            ) : (
+              <div className="flex-1 p-6 space-y-4">
+                {cart.map((item) => (
+                  <div key={item.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative group flex gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
+                      <div className={`w-6 h-6 rotate-45 ${item.gemColor} border border-gray-200`}></div>
+                    </div>
+                    <div className="flex-1 min-w-0 pr-8">
+                      <h4 className="text-xs font-black uppercase text-gray-900 truncate mb-1">{item.title}</h4>
+                      <div className="text-[8px] uppercase tracking-wide text-gray-400 space-y-0.5">
+                        <p>{item.config.setting} setting · {item.config.material} · {item.config.width}mm</p>
+                        <p>{item.config.gemstone} · {item.gemCarat.toFixed(1)} ct</p>
+                        {item.engraving && <p className="text-amber-800 font-serif italic truncate">Engraved: "{item.engraving}"</p>}
+                      </div>
+                      <p className="text-xs font-black text-[#b08d26] mt-2">${item.price.toLocaleString()}</p>
+                    </div>
+                    <button 
+                      onClick={() => removeCartItem(item.id)}
+                      className="absolute top-4 right-4 w-6 h-6 rounded-full hover:bg-red-50 text-gray-300 hover:text-red-500 flex items-center justify-center transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* CART FOOTER */}
+            {cart.length > 0 && (
+              <div className="border-t border-gray-100 bg-white p-8 shrink-0 space-y-6">
+                <div className="flex justify-between items-baseline">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order Total</span>
+                  <span className="text-2xl font-black text-black">
+                    ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}
+                  </span>
+                </div>
+                <button 
+                  onClick={() => setCheckoutStep('shipping')}
+                  className="w-full bg-[#b08d26] text-white hover:bg-black py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#b08d26]/10"
+                >
+                  Proceed to Checkout <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SHIPPING FORM STEP */}
+        {checkoutStep === 'shipping' && (
+          <form onSubmit={handleCheckoutSubmit} className="flex-1 flex flex-col overflow-hidden bg-white">
+            <div className="flex-1 overflow-y-auto p-8 space-y-6">
+              <div>
+                <span className="text-[8px] font-black text-[#b08d26] uppercase tracking-widest">Step 2 of 3</span>
+                <h4 className="text-md font-black uppercase mt-1">Shipping & Billing</h4>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Email Address *</label>
+                  <input required type="email" placeholder="client@luxury.com" 
+                         value={shippingInfo.email} onChange={(e) => setShippingInfo({ ...shippingInfo, email: e.target.value })}
+                         className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
+                </div>
+                <div>
+                  <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Full Name *</label>
+                  <input required type="text" placeholder="ALEXANDRA SMITH" 
+                         value={shippingInfo.name} onChange={(e) => setShippingInfo({ ...shippingInfo, name: e.target.value.toUpperCase() })}
+                         className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
+                </div>
+                <div>
+                  <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Shipping Address *</label>
+                  <input required type="text" placeholder="128 FIFTH AVENUE, NEW YORK, NY" 
+                         value={shippingInfo.address} onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value.toUpperCase() })}
+                         className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
+                </div>
+                
+                <div className="border-t border-gray-100 pt-6">
+                  <h5 className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-4">Payment Credentials</h5>
+                  <div>
+                    <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Card Number *</label>
+                    <input required type="text" placeholder="4111 2222 3333 4444" 
+                           value={shippingInfo.card} onChange={(e) => setShippingInfo({ ...shippingInfo, card: e.target.value })}
+                           className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mt-3">
+                    <div>
+                      <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Expiry *</label>
+                      <input required type="text" placeholder="MM/YY" 
+                             value={shippingInfo.expiry} onChange={(e) => setShippingInfo({ ...shippingInfo, expiry: e.target.value })}
+                             className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold text-center" />
+                    </div>
+                    <div>
+                      <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">CVC *</label>
+                      <input required type="text" placeholder="123" 
+                             value={shippingInfo.cvc} onChange={(e) => setShippingInfo({ ...shippingInfo, cvc: e.target.value })}
+                             className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold text-center" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100 bg-white p-8 shrink-0 flex gap-4">
               <button 
-                onClick={() => navigate('/checkout')}
-                className="w-full bg-[#b08d26] text-white hover:bg-black py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#b08d26]/10"
+                type="button"
+                onClick={() => setCheckoutStep('cart')}
+                className="border border-gray-200 hover:bg-gray-50 px-5 py-4 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
               >
-                Proceed to Checkout <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                Back
+              </button>
+              <button 
+                type="submit"
+                className="flex-1 bg-black text-white hover:bg-[#b08d26] py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg"
+              >
+                Submit Order & Pay ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}
               </button>
             </div>
-          )}
-        </div>
+          </form>
+        )}
+
+        {/* ORDER SUCCESS STEP */}
+        {checkoutStep === 'success' && (
+          <div className="flex-1 overflow-y-auto flex flex-col p-8 items-center justify-center text-center bg-white">
+            <span className="material-symbols-outlined text-6xl text-green-600 bg-green-50 p-6 rounded-full animate-bounce mb-6">verified</span>
+            <span className="text-[9px] font-black text-[#b08d26] uppercase tracking-[0.2em] mb-1">Receipt Confirmed</span>
+            <h4 className="text-xl font-black uppercase text-gray-900 mb-3">Masterpiece Order Placed!</h4>
+            <p className="text-xs text-gray-400 max-w-xs leading-relaxed mb-8">Thank you, <span className="font-bold text-black">{shippingInfo.name}</span>. An invoice receipt has been dispatched to <span className="font-bold text-black">{shippingInfo.email}</span>. Your bespoke jewelry item is officially under craftsmanship.</p>
+
+            <div className="w-full bg-gray-50 border border-gray-100 p-6 rounded-2xl text-[9px] uppercase text-gray-500 font-bold text-left space-y-2 mb-8">
+              <div className="flex justify-between border-b border-gray-200/50 pb-2">
+                <span>Order Reference:</span>
+                <span className="text-black font-black">#SHM-{Math.floor(100000 + Math.random() * 900000)}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-200/50 pb-2">
+                <span>Shipment Destination:</span>
+                <span className="text-black font-black truncate max-w-[150px]">{shippingInfo.address}</span>
+              </div>
+              <div className="flex justify-between border-b border-gray-200/50 pb-2">
+                <span>Status:</span>
+                <span className="text-amber-800 font-black">Chế tác thủ công</span>
+              </div>
+              <div className="flex justify-between pt-2">
+                <span>Paid amount:</span>
+                <span className="text-[#b08d26] font-black text-xs">${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => {
+                clearWholeCart();
+                setShowCart(false);
+              }}
+              className="w-full bg-black text-white hover:bg-[#b08d26] py-4 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all shadow-lg"
+            >
+              Continue Designing
+            </button>
+          </div>
+        )}
       </div>
 
     </div>
