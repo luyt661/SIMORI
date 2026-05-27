@@ -165,4 +165,5 @@ public class DesignService {
         return lightingEnvironmentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Lighting environment not found"));
     }
+
 }
