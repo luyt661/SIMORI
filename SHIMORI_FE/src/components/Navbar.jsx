@@ -128,9 +128,14 @@ const Navbar = () => {
               </span>
             )}
           </div>
-          <span className={`material-symbols-outlined cursor-pointer hover:text-black transition-colors ${
-            isHovered ? 'text-base' : 'text-sm'
-          }`}>person</span>
+          <span
+            onClick={() => navigate('/account')}
+            className={`material-symbols-outlined cursor-pointer hover:text-black transition-colors ${
+              isHovered ? 'text-base' : 'text-sm'
+            }`}
+          >
+            person
+          </span>
         </div>
       </div>
     </header>

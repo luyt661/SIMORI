@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SHIMORI - Bản Đồ Tư Duy Chức Năng Tương Tác</title>
+  
+  <!-- Google Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+  <style>
+    :root {
+      --bg-dark: #090807;
+      --bg-card: rgba(20, 18, 16, 0.7);
+      --border-glow: rgba(176, 141, 38, 0.2);
+      --gold: #b08d26;
+      --gold-bright: #facc15;
+      --text-main: #f5f5f5;
+      --text-muted: #a19d97;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: radial-gradient(circle at center, #1b1612 0%, var(--bg-dark) 100%);
+      color: var(--text-main);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* SVG Connector Overlay */
+    #svg-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Interactive Board Container */
+    #mindmap-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      cursor: grab;
+    }
+
+    #mindmap-container:active {
+      cursor: grabbing;
+    }
+
+    #zoom-pane {
+      position: absolute;
+      transform-origin: 0 0;
+      width: 3000px;
+      height: 2000px;
+      z-index: 2;
+    }
+
+    /* Floating Header Control Bar */
+    header {
+      position: fixed;
+      top: 24px;
+      left: 24px;
+      right: 24px;
+      height: 70px;
+      background: rgba(12, 10, 8, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(176, 141, 38, 0.25);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      z-index: 100;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-section span {
+      color: var(--gold-bright);
+      font-size: 28px;
+    }
+
+    .logo-section h1 {
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #fff 0%, var(--gold-bright) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 9px;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      margin-left: 8px;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      padding-left: 12px;
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .subtitle { display: inline-block; }
+    }
+
+    /* Toolbar controls */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-control {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-control:hover {
+      background: rgba(176, 141, 38, 0.15);
+      border-color: var(--gold);
+      color: var(--gold-bright);
+      box-shadow: 0 0 15px rgba(176, 141, 38, 0.25);
+    }
+
+    /* Node Cards Styling */
+    .node {
+      position: absolute;
+      background: var(--bg-card);
+      backdrop-filter: blur(15px);
+      border: 1px solid var(--border-glow);
+      border-radius: 18px;
+      padding: 18px 24px;
+      color: var(--text-main);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.35);
+      transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
+      z-index: 10;
+      max-width: 280px;
+      cursor: pointer;
+    }
+
+    .node:hover {
+      border-color: var(--gold-bright);
+      box-shadow: 0 0 30px rgba(176, 141, 38, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .node-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .node-title {
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    /* Node expansion toggle icon */
+    .toggle-icon {
+      font-family: 'Material Symbols Outlined';
+      font-size: 16px;
+      color: var(--gold);
+      transition: transform 0.3s;
+    }
+
+    /* Different tier stylings */
+    .root-node {
+      background: radial-gradient(circle at center, rgba(176, 141, 38, 0.2) 0%, rgba(20, 18, 16, 0.95) 100%);
+      border: 2px solid var(--gold-bright);
+      box-shadow: 0 0 40px rgba(176, 141, 38, 0.4);
+      padding: 24px 36px;
+      max-width: 320px;
+    }
+
+    .root-node .node-title {
+      font-size: 15px;
+      color: var(--gold-bright);
+      letter-spacing: 0.2em;
+    }
+
+    .tier-1-node {
+      border: 1px solid rgba(176, 141, 38, 0.55);
+      background: rgba(30, 26, 22, 0.85);
+    }
+
+    .tier-1-node .node-title {
+      color: var(--gold-bright);
+    }
+
+    .tier-2-node {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(16, 15, 14, 0.75);
+      padding: 12px 18px;
+      max-width: 220px;
+    }
+
+    .tier-2-node .node-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text-main);
+    }
+
+    /* Tooltip info section */
+    .node-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      line-height: 1.5;
+      font-weight: 400;
+      display: none; /* Can be shown on hover/detail */
+    }
+
+    .node:hover .node-desc {
+      display: block;
+    }
+
+    /* Interactive Instruction Badge */
+    .instruction-badge {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(12, 10, 8, 0.8);
+      border: 1px solid rgba(255,255,255,0.06);
+      backdrop-filter: blur(10px);
+      padding: 10px 24px;
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--gold-bright);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+      pointer-events: none;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+
+    .instruction-badge span {
+      font-size: 14px;
+      animation: pulse 1.5s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.3; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Floating Navigation Controls -->
+  <header>
+    <div class="logo-section">
+      <span class="material-symbols-outlined">diamond</span>
+      <div>
+        <h1>SHIMORI</h1>
+      </div>
+      <span class="subtitle">Bản đồ tính năng tương tác (NotebookLM Style)</span>
+    </div>
+    
+    <div class="controls">
+      <button class="btn-control" id="btn-expand"><span class="material-symbols-outlined">unfold_more</span> Mở hết</button>
+      <button class="btn-control" id="btn-collapse"><span class="material-symbols-outlined">unfold_less</span> Thu hết</button>
+      <button class="btn-control" id="btn-reset"><span class="material-symbols-outlined">restart_alt</span> Khôi phục</button>
+    </div>
+  </header>
+
+  <!-- Central SVG Connection Layer -->
+  <svg id="svg-canvas"></svg>
+
+  <!-- Interactive Mindmap Workspace -->
+  <div id="mindmap-container">
+    <div id="zoom-pane">
+      <!-- Generated Nodes Go Here dynamically -->
+    </div>
+  </div>
+
+  <!-- Instruction Badge -->
+  <div class="instruction-badge">
+    <span class="material-symbols-outlined">mouse</span>
+    Click các ô để đóng/mở nhánh • Kéo chuột để di chuyển • Lăn chuột để phóng to/thu nhỏ
+  </div>
+
+  <script>
+    // Functional Mindmap Data (NotebookLM structure)
+    const data = {
+      id: "root",
+      name: "SHIMORI ATELIER",
+      desc: "Hệ thống mua sắm & thiết kế 3D trang sức cao cấp trực quan",
+      type: "root",
+      children: [
+        {
+          id: "m1",
+          name: "XƯỞNG THIẾT KẾ 3D",
+          desc: "Nơi chế tác nhẫn cưới và trang sức cao cấp thời gian thực",
+          type: "tier-1",
+          children: [
+            { id: "m1_1", name: "🏷️ Đặt tên riêng", desc: "Tự đặt tên riêng cho bản vẽ để lưu bản sắc cá nhân", type: "tier-2" },
+            { id: "m1_2", name: "💍 Kiểu chấu đá", desc: "Tùy chọn cấu trúc giữ đá chủ (Solitaire, Bezel, Halo...)", type: "tier-2" },
+            { id: "m1_3", name: "🔩 Chọn kim loại", desc: "Thay đổi chất liệu Titanium, Bạc, hay Thép không gỉ", type: "tier-2" },
+            { id: "m1_4", name: "💎 Chọn đá quý", desc: "Đính đá quý tự nhiên (Diamond, Ruby, Sapphire, Emerald...)", type: "tier-2" },
+            { id: "m1_5", name: "📐 Kích thước đai nhẫn", desc: "Thanh trượt chỉnh độ dày đai nhẫn (từ 1.5mm - 6.0mm)", type: "tier-2" },
+            { id: "m1_6", name: "⚖️ Carat đá chủ", desc: "Thanh trượt phóng to/thu nhỏ carat đá quý (từ 0.5ct - 5.0ct)", type: "tier-2" },
+            { id: "m1_7", name: "✍️ Khắc laser lòng nhẫn", desc: "Nhập thông điệp chữ nghệ thuật khắc bên trong đai nhẫn", type: "tier-2" },
+            { id: "m1_8", name: "☀️ Ánh sáng Studio", desc: "Thay đổi 4 phòng chụp thực tế ảo để ngắm phản chiếu kim loại", type: "tier-2" },
+            { id: "m1_9", name: "🔗 Tạo link chia sẻ", desc: "Tải link lưu chính xác thông số cấu hình 3D gửi cho bạn bè", type: "tier-2" }
+          ]
+        },
+        {
+          id: "m2",
+          name: "DANH MỤC SẢN PHẨM",
+          desc: "Nơi trưng bày các sản phẩm mẫu đặc trưng của thương hiệu",
+          type: "tier-1",
+          children: [
+            { id: "m2_1", name: "✨ Trình diễn bộ sưu tập", desc: "Hiển thị sản phẩm mẫu theo phong cách sang trọng", type: "tier-2" },
+            { id: "m2_2", name: "🔄 Xoay 360 độ", desc: "Khám phá sản phẩm mẫu ở mọi góc độ, phóng to thu nhỏ trực quan", type: "tier-2" },
+            { id: "m2_3", name: "📋 Thông số chế tác", desc: "Xem chi tiết chấu đá, loại đá quý, chất liệu mẫu gốc", type: "tier-2" },
+            { id: "m2_4", name: "⭐ Yêu thích", desc: "Đưa các mẫu ưng ý vào danh mục quan tâm để xem lại", type: "tier-2" },
+            { id: "m2_5", name: "⚡ Mua ngay (Buy Now)", desc: "Lối tắt mua nhanh, đưa trực tiếp sản phẩm vào trang thanh toán", type: "tier-2" },
+            { id: "m2_6", name: "🛠️ Chuyển sang Xưởng 3D", desc: "Chuyển mẫu thiết kế gốc sang Studio để tùy biến sâu hơn", type: "tier-2" }
+          ]
+        },
+        {
+          id: "m3",
+          name: "GIỎ HÀNG & THANH TOÁN",
+          desc: "Luồng xử lý đặt hàng tối ưu hóa, an toàn và minh bạch",
+          type: "tier-1",
+          children: [
+            { id: "m3_1", name: "🔔 Bộ đếm giỏ hàng", desc: "Cập nhật realtime số lượng sản phẩm trên thanh điều hướng", type: "tier-2" },
+            { id: "m3_2", name: "📊 Bóc tách chi phí", desc: "Bảng chi tiết giá kim loại quý, carat đá, giá thủ công", type: "tier-2" },
+            { id: "m3_3", name: "🧾 Hóa đơn cá nhân hóa", desc: "Receipt hiển thị đầy đủ tên bản thiết kế riêng của bạn", type: "tier-2" },
+            { id: "m3_4", name: "🚚 Vận chuyển bảo hiểm", desc: "Giao hàng tận tay khách hàng với cam kết bảo hiểm 100%", type: "tier-2" },
+            { id: "m3_5", name: "🔒 Thanh toán thẻ", desc: "Xử lý thông tin giao dịch thẻ bảo mật tuyệt đối", type: "tier-2" }
+          ]
+        },
+        {
+          id: "m4",
+          name: "TÀI KHOẢN KHO LƯU TRỮ",
+          desc: "Khu vực kiểm soát bảo mật đơn hàng và tác phẩm nghệ thuật",
+          type: "tier-1",
+          children: [
+            { id: "m4_1", name: "🔐 Quản lý tài khoản", desc: "Đăng nhập, quản lý thông tin giao hàng khách hàng", type: "tier-2" },
+            { id: "m4_2", name: "🗃️ Kho thiết kế đã lưu", desc: "Tải lại cấu hình nhẫn cũ bất cứ lúc nào để chỉnh sửa hoặc đặt mua", type: "tier-2" },
+            { id: "m4_3", name: "📦 Cập nhật gia công", desc: "Theo dõi tiến độ chế tác thủ công của nhẫn tại xưởng kim hoàn", type: "tier-2" }
+          ]
+        }
+      ]
+    };
+
+    // Collapse states
+    const collapsedStates = {
+      root: false,
+      m1: true,
+      m2: true,
+      m3: true,
+      m4: true
+    };
+
+    // Pan & Zoom parameters
+    let panX = window.innerWidth / 2 - 150;
+    let panY = window.innerHeight / 2 - 50;
+    let scale = 0.95;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    const container = document.getElementById("mindmap-container");
+    const pane = document.getElementById("zoom-pane");
+    const svgCanvas = document.getElementById("svg-canvas");
+
+    // Initialize layout positions
+    function computeLayout() {
+      const rootX = 100;
+      const rootY = 800; // midheight vertical
+      
+      const tier1DistanceX = 400;
+      const tier2DistanceX = 350;
+      
+      const tier1HeightGap = 350;
+      const tier2HeightGap = 75;
+
+      const layout = {};
+
+      // Root positioning
+      layout["root"] = { x: rootX, y: rootY, visible: true };
+
+      let currentY = rootY - (data.children.length - 1) * tier1HeightGap / 2;
+
+      data.children.forEach((t1, idx) => {
+        const t1X = rootX + tier1DistanceX;
+        const t1Y = currentY + idx * tier1HeightGap;
+        
+        layout[t1.id] = { x: t1X, y: t1Y, visible: !collapsedStates.root };
+
+        if (!collapsedStates.root && !collapsedStates[t1.id]) {
+          // Calculate vertical stack for tier 2 child nodes next to this tier 1 parent
+          const numT2 = t1.children.length;
+          const startT2Y = t1Y - (numT2 - 1) * tier2HeightGap / 2;
+          
+          t1.children.forEach((t2, t2idx) => {
+            layout[t2.id] = {
+              x: t1X + tier2DistanceX,
+              y: startT2Y + t2idx * tier2HeightGap,
+              visible: true
+            };
+          });
+        } else {
+          t1.children.forEach(t2 => {
+            layout[t2.id] = { x: t1X + tier2DistanceX, y: t1Y, visible: false };
+          });
+        }
+      });
+
+      return layout;
+    }
+
+    // Render nodes
+    function render() {
+      const layout = computeLayout();
+      pane.innerHTML = "";
+      
+      // Render Root
+      createNodeDOM("root", data.name, data.desc, "root", layout["root"]);
+
+      // Render Modules & Sub-features
+      data.children.forEach(t1 => {
+        createNodeDOM(t1.id, t1.name, t1.desc, "tier-1", layout[t1.id]);
+        
+        t1.children.forEach(t2 => {
+          createNodeDOM(t2.id, t2.name, t2.desc, "tier-2", layout[t2.id]);
+        });
+      });
+
+      applyTransform();
+      setTimeout(drawConnections, 50); // Delay slightly to let layout adjust
+    }
+
+    function createNodeDOM(id, name, desc, type, pos) {
+      if (!pos.visible) return;
+
+      const div = document.createElement("div");
+      div.id = `node-${id}`;
+      div.className = `node ${type}-node`;
+      div.style.left = `${pos.x}px`;
+      div.style.top = `${pos.y}px`;
+
+      // Toggle indicator logic
+      let icon = "";
+      if (id !== "root" && type === "tier-1") {
+        icon = `<span class="toggle-icon material-symbols-outlined">${collapsedStates[id] ? 'add_circle' : 'remove_circle'}</span>`;
+      } else if (id === "root") {
+        icon = `<span class="toggle-icon material-symbols-outlined">${collapsedStates.root ? 'add_circle' : 'remove_circle'}</span>`;
+      }
+
+      div.innerHTML = `
+        <div class="node-header">
+          <span class="node-title">${name}</span>
+          ${icon}
+        </div>
+        <div class="node-desc">${desc}</div>
+      `;
+
+      // Collapse toggle action on click
+      div.onclick = (e) => {
+        e.stopPropagation();
+        if (id === "root") {
+          collapsedStates.root = !collapsedStates.root;
+        } else if (type === "tier-1") {
+          collapsedStates[id] = !collapsedStates[id];
+        }
+        render();
+      };
+
+      pane.appendChild(div);
+    }
+
+    // Draw flowing glowing connections
+    function drawConnections() {
+      svgCanvas.innerHTML = "";
+      const layout = computeLayout();
+
+      // Connections root to Tier 1
+      if (!collapsedStates.root) {
+        const rootNode = document.getElementById("node-root");
+        if (!rootNode) return;
+        const rootBounds = rootNode.getBoundingClientRect();
+        const rootPt = getRightCenter(rootNode);
+
+        data.children.forEach(t1 => {
+          const t1Node = document.getElementById(`node-${t1.id}`);
+          if (!t1Node) return;
+          const targetPt = getLeftCenter(t1Node);
+
+          drawCurve(rootPt.x, rootPt.y, targetPt.x, targetPt.y, varColor("--gold"));
+
+          // Connections Tier 1 to Tier 2
+          if (!collapsedStates[t1.id]) {
+            const t1Pt = getRightCenter(t1Node);
+            t1.children.forEach(t2 => {
+              const t2Node = document.getElementById(`node-${t2.id}`);
+              if (!t2Node) return;
+              const t2Pt = getLeftCenter(t2Node);
+              drawCurve(t1Pt.x, t1Pt.y, t2Pt.x, t2Pt.y, "rgba(255,255,255,0.15)");
+            });
+          }
+        });
+      }
+    }
+
+    function getRightCenter(el) {
+      const parentRect = container.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      return {
+        x: rect.right - parentRect.left,
+        y: rect.top + rect.height / 2 - parentRect.top
+      };
+    }
+
+    function getLeftCenter(el) {
+      const parentRect = container.getBoundingClientRect();
+      const rect = el.getBoundingClientRect();
+      return {
+        x: rect.left - parentRect.left,
+        y: rect.top + rect.height / 2 - parentRect.top
+      };
+    }
+
+    function drawCurve(x1, y1, x2, y2, color) {
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      
+      // Calculate elegant horizontal bezier control points
+      const ctrlX = x1 + (x2 - x1) * 0.45;
+      const d = `M ${x1} ${y1} C ${ctrlX} ${y1}, ${x1 + (x2 - x1) * 0.55} ${y2}, ${x2} ${y2}`;
+
+      path.setAttribute("d", d);
+      path.setAttribute("stroke", color);
+      path.setAttribute("stroke-width", "2");
+      path.setAttribute("fill", "none");
+      
+      // Add neon glow for active paths
+      if (color.includes("b08d26") || color.includes("gold")) {
+        path.setAttribute("stroke-width", "2.5");
+        path.setAttribute("filter", "drop-shadow(0px 0px 5px rgba(176,141,38,0.6))");
+      }
+
+      svgCanvas.appendChild(path);
+    }
+
+    function varColor(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    function applyTransform() {
+      pane.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
+
+    // Panning & dragging event handlers
+    container.onmousedown = (e) => {
+      isDragging = true;
+      startX = e.clientX - panX;
+      startY = e.clientY - panY;
+    };
+
+    window.onmousemove = (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX;
+      panY = e.clientY - startY;
+      applyTransform();
+      drawConnections(); // Redraw paths dynamically while dragging
+    };
+
+    window.onmouseup = () => {
+      isDragging = false;
+    };
+
+    // Zooming using scroll wheel
+    container.onwheel = (e) => {
+      e.preventDefault();
+      
+      const zoomFactor = 1.1;
+      const mouseX = e.clientX - container.offsetLeft;
+      const mouseY = e.clientY - container.offsetTop;
+
+      // Adjust relative coordinates to zoom to mouse focus point
+      const relativeX = (mouseX - panX) / scale;
+      const relativeY = (mouseY - panY) / scale;
+
+      if (e.deltaY < 0) {
+        scale = Math.min(2.5, scale * zoomFactor);
+      } else {
+        scale = Math.max(0.4, scale / zoomFactor);
+      }
+
+      panX = mouseX - relativeX * scale;
+      panY = mouseY - relativeY * scale;
+
+      applyTransform();
+      drawConnections();
+    };
+
+    // Toolbar buttons
+    document.getElementById("btn-expand").onclick = () => {
+      collapsedStates.root = false;
+      data.children.forEach(c => collapsedStates[c.id] = false);
+      render();
+    };
+
+    document.getElementById("btn-collapse").onclick = () => {
+      collapsedStates.root = false;
+      data.children.forEach(c => collapsedStates[c.id] = true);
+      render();
+    };
+
+    document.getElementById("btn-reset").onclick = () => {
+      panX = window.innerWidth / 2 - 150;
+      panY = window.innerHeight / 2 - 100;
+      scale = 0.95;
+      collapsedStates.root = false;
+      data.children.forEach((c, idx) => collapsedStates[c.id] = idx !== 0); // Open first by default
+      render();
+    };
+
+    // Responsive adaptation on window resize
+    window.onresize = () => {
+      drawConnections();
+    };
+
+    // Launch mindmap
+    document.getElementById("btn-reset").click();
+  </script>
+</body>
+</html>

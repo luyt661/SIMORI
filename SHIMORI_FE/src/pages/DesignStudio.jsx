@@ -110,6 +110,7 @@ const DesignStudio = () => {
     width: 2.5,
   });
 
+  const [designName, setDesignName] = useState('Master Piece #4491');
   const [gemCarat, setGemCarat] = useState(2.0);
   const [engraving, setEngraving] = useState('');
   const [engravingInput, setEngravingInput] = useState('');
@@ -181,6 +182,10 @@ const DesignStudio = () => {
     }
     if (lightingParam) {
       if (['studio', 'sunset', 'warehouse', 'dawn'].includes(lightingParam)) setLightingPreset(lightingParam);
+    }
+    const nameParam = params.get('name');
+    if (nameParam) {
+      setDesignName(nameParam);
     }
     const openCartParam = params.get('openCart');
     if (openCartParam === 'true') {
@@ -279,6 +284,7 @@ const DesignStudio = () => {
   // Copy shareable link
   const copyShareLink = () => {
     const params = new URLSearchParams();
+    params.set('name', designName);
     params.set('setting', config.setting);
     params.set('material', config.material);
     params.set('gemstone', config.gemstone);
@@ -307,6 +313,7 @@ const DesignStudio = () => {
   const saveToCollection = () => {
     const newDesign = {
       id: Date.now(),
+      name: designName,
       config: { ...config },
       gemCarat,
       engraving,
@@ -338,6 +345,7 @@ const DesignStudio = () => {
     setEngravingInput(design.engraving || '');
     setEngravingFont(design.engravingFont || 'Script');
     setLightingPreset(design.lightingPreset || 'studio');
+    if (design.name) setDesignName(design.name);
     setShowSavedModal(false);
     toast.success('Design loaded successfully!');
   };
@@ -346,7 +354,7 @@ const DesignStudio = () => {
   const addItemToCart = () => {
     const cartItem = {
       id: Date.now(),
-      title: `Bespoke Ring - Design #${Math.floor(1000 + Math.random() * 9000)}`,
+      title: designName ? `Bespoke Ring - ${designName}` : `Bespoke Ring - Design #${Math.floor(1000 + Math.random() * 9000)}`,
       config: { ...config },
       gemCarat,
       engraving,
@@ -364,6 +372,7 @@ const DesignStudio = () => {
 
   const proceedToProductDetail = () => {
     const params = new URLSearchParams();
+    params.set('name', designName);
     params.set('setting', config.setting);
     params.set('material', config.material);
     params.set('gemstone', config.gemstone);
@@ -444,8 +453,17 @@ const DesignStudio = () => {
       <div className="flex-1 flex overflow-hidden min-h-0">
         <aside className="w-[400px] border-r border-gray-100 bg-white overflow-y-auto no-scrollbar p-8 shrink-0 h-full">
           <div className="mb-8">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#b08d26] mb-1">Configuration</h2>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Master Piece #4491</p>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#b08d26] mb-1.5">Design Name</h2>
+            <div className="relative group/name max-w-xs">
+              <input
+                type="text"
+                value={designName}
+                onChange={(e) => setDesignName(e.target.value)}
+                placeholder="Name your design..."
+                className="w-full bg-gray-50 hover:bg-gray-100/70 border border-gray-100 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#b08d26] focus:bg-white font-black uppercase tracking-wider text-gray-800 placeholder:text-gray-400 placeholder:font-bold transition-all"
+              />
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/name:text-[#b08d26] text-sm pointer-events-none transition-colors">edit</span>
+            </div>
           </div>
 
           <div className="bg-gray-50/80 rounded-xl border border-gray-100 p-6 mb-10">
@@ -759,14 +777,24 @@ const DesignStudio = () => {
             </button>
           </div>
 
-          <button
-            onMouseEnter={() => setShowPriceBreakdown(true)}
-            onMouseLeave={() => setShowPriceBreakdown(false)}
-            onClick={proceedToProductDetail}
-            className="bg-[#b08d26] text-white px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10"
-          >
-            View Details & Order <span className="material-symbols-outlined text-base">arrow_forward</span>
-          </button>
+          <div className="flex gap-4 items-center">
+            <button
+              onClick={addItemToCart}
+              title="Add to Cart"
+              className="bg-black text-white w-14 h-14 rounded-xl flex items-center justify-center hover:bg-[#b08d26] transition-all shadow-lg shadow-black/10 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xl">shopping_cart</span>
+            </button>
+
+            <button
+              onMouseEnter={() => setShowPriceBreakdown(true)}
+              onMouseLeave={() => setShowPriceBreakdown(false)}
+              onClick={proceedToProductDetail}
+              className="bg-[#b08d26] text-white px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10 cursor-pointer"
+            >
+              View Details & Order <span className="material-symbols-outlined text-base">arrow_forward</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -799,7 +827,9 @@ const DesignStudio = () => {
                         <div className="flex justify-between items-start mb-4">
                           <div>
                             <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{d.date}</span>
-                            <h4 className="text-sm font-black uppercase mt-1">Bespoke Ring #{d.id.toString().slice(-4)}</h4>
+                            <h4 className="text-sm font-black uppercase mt-1 truncate max-w-[220px]">
+                              {d.name ? `Bespoke Ring - ${d.name}` : `Bespoke Ring #${d.id.toString().slice(-4)}`}
+                            </h4>
                           </div>
                           <span className="text-sm font-black text-[#b08d26]">${d.totalPrice.toLocaleString()}</span>
                         </div>

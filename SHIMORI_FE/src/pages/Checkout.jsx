@@ -47,6 +47,30 @@ const Checkout = () => {
     toast.success('Payment successful! Your order is being handcrafted.', {
       style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
     });
+
+    // Save purchase details to localStorage for Account Order History
+    const orderData = {
+      orderRef: ref,
+      date: new Date().toLocaleDateString('en-US'),
+      total: totalAmount,
+      items: cart,
+      shippingInfo: {
+        name: shippingInfo.name,
+        email: shippingInfo.email,
+        address: shippingInfo.address,
+      },
+    };
+
+    const rawOrders = localStorage.getItem('shimori_orders');
+    let ordersList = [];
+    if (rawOrders) {
+      try {
+        ordersList = JSON.parse(rawOrders);
+      } catch (err) {
+        ordersList = [];
+      }
+    }
+    localStorage.setItem('shimori_orders', JSON.stringify([orderData, ...ordersList]));
   };
 
   const handleFinish = () => {
@@ -249,6 +273,17 @@ const Checkout = () => {
             <div className="flex justify-between border-b border-gray-200/50 dark:border-white/5 pb-2">
               <span>Order Reference:</span>
               <span className="text-black dark:text-white font-black">{orderRef}</span>
+            </div>
+            <div className="flex flex-col border-b border-gray-200/50 dark:border-white/5 pb-2 gap-1">
+              <span className="mb-0.5">Purchased Products:</span>
+              <div className="text-black dark:text-white font-black space-y-1.5 pl-2 border-l border-[#b08d26]">
+                {cart.map((item) => (
+                  <div key={item.id} className="flex justify-between items-center gap-4">
+                    <span className="truncate max-w-[240px]">{item.title}</span>
+                    <span className="text-gray-400 text-[8px] font-bold shrink-0">${item.price.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="flex justify-between border-b border-gray-200/50 dark:border-white/5 pb-2">
               <span>Shipment Destination:</span>

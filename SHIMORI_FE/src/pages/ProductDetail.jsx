@@ -1,14 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import Navbar from '../components/Navbar';
 import JewelryViewer from '../components/JewelryViewer';
 import { PRODUCTS } from '../data/products';
 import { modelGroups } from '../models';
-import imgFront from '../demo-images/front.png';
-import imgSide from '../demo-images/side.png';
-import imgClose from '../demo-images/close.png';
-import imgLifestyle from '../demo-images/lifestyle.png';
 
 const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -25,35 +21,65 @@ const ProductDetail = () => {
 
   const product = PRODUCTS.find((p) => p.id === Number(id)) || PRODUCTS[0];
 
-  const thumbnails = [imgFront, imgSide, imgClose, imgLifestyle];
-  const [mainImage, setMainImage] = useState(thumbnails[0]);
-
   // Parse query parameters
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const isCustomized = queryParams.get('customized') === 'true';
+  const customName = useMemo(() => queryParams.get('name') || '', [queryParams]);
 
-  const customizedConfig = useMemo(() => {
-    if (!isCustomized) return null;
+  const activeConfig = useMemo(() => {
+    if (isCustomized) {
+      return {
+        setting: queryParams.get('setting') || 'Prong',
+        material: queryParams.get('material') || 'Silver',
+        gemstone: queryParams.get('gemstone') || 'Diamond',
+        bandStyle: queryParams.get('bandStyle') || 'Plain',
+        width: parseFloat(queryParams.get('width') || '2.5'),
+        carat: parseFloat(queryParams.get('carat') || '2.0'),
+        lighting: queryParams.get('lighting') || 'studio',
+      };
+    }
+    
+    // Standard default configurations based on product ID
+    let setting = 'Prong';
+    let gemstone = 'Diamond';
+    let material = 'Silver';
+    let bandStyle = 'Plain';
+    let width = 2.5;
+    let carat = 2.0;
+
+    if (product.id === 2) {
+      setting = 'Halo';
+    } else if (product.id === 3) {
+      setting = 'Channel';
+    }
+
+    const caratVal = parseFloat(product.specs?.['Carat Weight']);
+    if (!isNaN(caratVal)) {
+      carat = caratVal;
+    }
+
     return {
-      setting: queryParams.get('setting') || 'Prong',
-      material: queryParams.get('material') || 'Silver',
-      gemstone: queryParams.get('gemstone') || 'Diamond',
-      bandStyle: queryParams.get('bandStyle') || 'Plain',
-      width: parseFloat(queryParams.get('width') || '2.5'),
+      setting,
+      material,
+      gemstone,
+      bandStyle,
+      width,
+      carat,
+      lighting: 'studio',
     };
-  }, [isCustomized, queryParams]);
+  }, [isCustomized, queryParams, product]);
 
   const customizedSpecs = useMemo(() => {
-    if (!isCustomized || !customizedConfig) return null;
+    if (!isCustomized) return null;
     return {
-      'Stone Setting': customizedConfig.setting,
-      'Precious Material': customizedConfig.material,
-      'Primary Gemstone': customizedConfig.gemstone,
-      'Band Style': customizedConfig.bandStyle,
-      'Band Width': `${customizedConfig.width} mm`,
-      'Carat Weight': `${parseFloat(queryParams.get('carat') || '2.0').toFixed(1)} ct`,
+      'Stone Setting': activeConfig.setting,
+      'Precious Material': activeConfig.material,
+      'Primary Gemstone': activeConfig.gemstone,
+      'Band Style': activeConfig.bandStyle,
+      'Band Width': `${activeConfig.width} mm`,
+      'Carat Weight': `${activeConfig.carat.toFixed(1)} ct`,
     };
-  }, [isCustomized, customizedConfig, queryParams]);
+  }, [isCustomized, activeConfig]);
 
   const displayPrice = useMemo(() => {
     if (isCustomized) {
@@ -65,32 +91,28 @@ const ProductDetail = () => {
     return product.price;
   }, [isCustomized, queryParams, product.price]);
 
-  // Calculate 3D viewer URLs and properties for customized product
+  // Calculate 3D viewer URLs and properties
   const settingModelUrl = useMemo(() => {
-    if (!customizedConfig) return null;
-    const target = normalize(customizedConfig.setting);
+    const target = normalize(activeConfig.setting);
     const match = modelGroups.settings.find((m) => normalize(m.name) === target || normalize(m.key) === target);
     return match?.url || modelGroups.settings[0]?.url;
-  }, [customizedConfig]);
+  }, [activeConfig.setting]);
 
   const gemModelUrl = useMemo(() => {
-    if (!customizedConfig) return null;
-    const target = normalize(customizedConfig.gemstone);
+    const target = normalize(activeConfig.gemstone);
     const match = modelGroups.gems.find((g) => normalize(g.name) === target || normalize(g.key) === target);
     return match?.url || modelGroups.gems[0]?.url;
-  }, [customizedConfig]);
+  }, [activeConfig.gemstone]);
 
   const materialProps = useMemo(() => {
-    if (!customizedConfig) return null;
-    return MATERIAL_CONFIGS[customizedConfig.material] ?? null;
-  }, [customizedConfig]);
+    return MATERIAL_CONFIGS[activeConfig.material] ?? null;
+  }, [activeConfig.material]);
 
   const widthScale = useMemo(() => {
-    if (!customizedConfig) return 1;
-    return parseFloat((customizedConfig.width / 2.5).toFixed(3));
-  }, [customizedConfig]);
+    return parseFloat((activeConfig.width / 2.5).toFixed(3));
+  }, [activeConfig.width]);
 
-  const gemCarat = useMemo(() => parseFloat(queryParams.get('carat') || '2.0'), [queryParams]);
+  const gemCarat = useMemo(() => activeConfig.carat, [activeConfig.carat]);
 
   const handleCustomize = () => {
     if (isCustomized) {
@@ -154,7 +176,9 @@ const ProductDetail = () => {
 
     const cartItem = {
       id: Date.now(),
-      title: isCustomized ? `Bespoke Ring - Design #${Math.floor(1000 + Math.random() * 9000)}` : product.fullTitle,
+      title: isCustomized
+        ? (customName ? `Bespoke Ring - ${customName}` : `Bespoke Ring - Design #${Math.floor(1000 + Math.random() * 9000)}`)
+        : product.fullTitle,
       config: {
         setting: isCustomized ? (queryParams.get('setting') || 'Prong') : (product.id === 2 ? 'Halo' : product.id === 3 ? 'Channel' : 'Prong'),
         material: isCustomized ? (queryParams.get('material') || 'Silver') : 'Silver',
@@ -180,7 +204,7 @@ const ProductDetail = () => {
     });
 
     setTimeout(() => {
-      navigate('/design?openCart=true');
+      navigate('/checkout');
     }, 800);
   };
 
@@ -193,53 +217,24 @@ const ProductDetail = () => {
       <main className="max-w-6xl mx-auto px-4 lg:px-8 py-6 flex-grow">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-          {/* LEFT: IMAGE GALLERY OR 3D VIEWER */}
-          <div className="lg:col-span-7 space-y-4">
+          {/* LEFT: INTERACTIVE 3D VIEWER */}
+          <div className="lg:col-span-7">
             <div className="aspect-square bg-slate-100 dark:bg-[#2a2a2a] rounded-3xl overflow-hidden group relative shadow-2xl">
-              {isCustomized && settingModelUrl && gemModelUrl ? (
+              {settingModelUrl && gemModelUrl && (
                 <JewelryViewer
                   ringUrl={settingModelUrl}
                   gemUrl={gemModelUrl}
                   materialProps={materialProps}
                   ringWidthScale={widthScale}
-                  gemstoneName={customizedConfig.gemstone}
+                  gemstoneName={activeConfig.gemstone}
                   gemCarat={gemCarat}
-                  lightingPreset={queryParams.get('lighting') || 'studio'}
-                  engraving=""
-                  engravingFont="Script"
-                  bandStyle={customizedConfig.bandStyle}
+                  lightingPreset={activeConfig.lighting}
+                  engraving={isCustomized ? (queryParams.get('engraving') || '') : ''}
+                  engravingFont={isCustomized ? (queryParams.get('font') || 'Script') : 'Script'}
+                  bandStyle={activeConfig.bandStyle}
                 />
-              ) : (
-                <>
-                  <img
-                    alt="Classic Diamond Solitaire Ring"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    src={mainImage}
-                  />
-                  <div
-                    onClick={handleCustomize}
-                    className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/70 backdrop-blur-md text-white px-6 py-3 rounded-full text-[10px] uppercase tracking-[0.2em] font-black cursor-pointer hover:bg-[#facc15] hover:text-black transition-all"
-                  >
-                    <span className="material-symbols-outlined !text-sm">view_in_ar</span>
-                    Interactive 3D View
-                  </div>
-                </>
               )}
             </div>
-
-            {!isCustomized && (
-              <div className="grid grid-cols-4 gap-2">
-                {thumbnails.map((img, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => setMainImage(img)}
-                    className={`aspect-square rounded-lg overflow-hidden cursor-pointer transition-all border-2 ${mainImage === img ? 'border-[#facc15] scale-95' : 'border-transparent hover:opacity-80'}`}
-                  >
-                    <img alt={`Angle ${idx}`} className="w-full h-full object-cover" src={img}/>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* RIGHT: PRODUCT INFO */}
@@ -258,7 +253,7 @@ const ProductDetail = () => {
             )}
 
             <h2 className="text-2xl md:text-3xl font-black mb-2 leading-tight tracking-tighter uppercase">
-              {product.fullTitle}
+              {isCustomized && customName ? `Bespoke Ring - ${customName}` : product.fullTitle}
             </h2>
 
             <div className="flex items-center gap-3 mb-3">
@@ -293,10 +288,10 @@ const ProductDetail = () => {
               <div className="flex gap-2">
                 <button
                   onClick={addToCart}
-                  className="flex-1 bg-[#facc15] text-black font-black py-3 rounded-xl uppercase tracking-[0.15em] text-[9px] hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg"
+                  className="flex-1 bg-[#facc15] text-black font-black py-3 rounded-xl uppercase tracking-[0.15em] text-[9px] hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-sm">shopping_cart</span>
-                  Add to Cart
+                  Buy Now
                 </button>
                 <button
                   onClick={() => toast.success('Added to Wishlist!')}

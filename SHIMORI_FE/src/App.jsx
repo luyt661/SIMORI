@@ -6,6 +6,7 @@ const DesignStudio = lazy(() => import('./pages/DesignStudio'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Login = lazy(() => import('./pages/Login'));
 const Checkout = lazy(() => import('./pages/Checkout'));
+const Account = lazy(() => import('./pages/Account'));
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/product-detail/:id" element={<ProductDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/account" element={<Account />} />
         </Routes>
       </Suspense>
     </Router>
