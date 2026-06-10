@@ -5,6 +5,7 @@ const Home = lazy(() => import('./pages/Home'));
 const DesignStudio = lazy(() => import('./pages/DesignStudio'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
 const MyDesigns = lazy(() => import('./pages/MyDesigns'));
 
 function App() {
@@ -19,12 +20,12 @@ function App() {
       >
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+
           <Route path="/home" element={<Home />} />
           <Route path="/design" element={<DesignStudio />} />
           <Route path="/product-detail/:id" element={<ProductDetail />} />
-          <Route path="/login" element={<Login />} />
-
-          {/* Thêm route này */}
           <Route path="/my-designs" element={<MyDesigns />} />
         </Routes>
       </Suspense>
