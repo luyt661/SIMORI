@@ -5,8 +5,6 @@ const Home = lazy(() => import('./pages/Home'));
 const DesignStudio = lazy(() => import('./pages/DesignStudio'));
 const ProductDetail = lazy(() => import('./pages/ProductDetail'));
 const Login = lazy(() => import('./pages/Login'));
-const Checkout = lazy(() => import('./pages/Checkout'));
-const Account = lazy(() => import('./pages/Account'));
 const MyDesigns = lazy(() => import('./pages/MyDesigns'));
 
 function App() {
@@ -20,19 +18,14 @@ function App() {
         }
       >
         <Routes>
-          {/* Auth */}
           <Route path="/" element={<Login />} />
-          <Route path="/login" element={<Login />} />
-
-          {/* Main Pages */}
           <Route path="/home" element={<Home />} />
           <Route path="/design" element={<DesignStudio />} />
-          <Route path="/my-designs" element={<MyDesigns />} />
           <Route path="/product-detail/:id" element={<ProductDetail />} />
+          <Route path="/login" element={<Login />} />
 
-          {/* Other Pages */}
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/account" element={<Account />} />
+          {/* Thêm route này */}
+          <Route path="/my-designs" element={<MyDesigns />} />
         </Routes>
       </Suspense>
     </Router>
