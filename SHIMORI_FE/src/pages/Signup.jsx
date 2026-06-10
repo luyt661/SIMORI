@@ -11,11 +11,12 @@ const Signup = () => {
     fullName: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
 
-  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (field, value) => {
     setForm((prev) => ({
@@ -30,30 +31,39 @@ const Signup = () => {
   };
 
   const validateForm = () => {
-    const newErrors = {};
+    const nextErrors = {};
 
     if (!form.username.trim()) {
-      newErrors.username = 'Username không được để trống';
+      nextErrors.username = 'Username không được để trống';
+    } else if (form.username.trim().length < 3) {
+      nextErrors.username = 'Username phải có ít nhất 3 ký tự';
     }
 
     if (!form.fullName.trim()) {
-      newErrors.fullName = 'Full name không được để trống';
+      nextErrors.fullName = 'Họ tên không được để trống';
     }
 
     if (!form.email.trim()) {
-      newErrors.email = 'Email không được để trống';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      newErrors.email = 'Email không đúng định dạng';
+      nextErrors.email = 'Email không được để trống';
+    } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
+      nextErrors.email = 'Email không hợp lệ';
     }
 
     if (!form.password.trim()) {
-      newErrors.password = 'Password không được để trống';
+      nextErrors.password = 'Mật khẩu không được để trống';
     } else if (form.password.length < 6) {
-      newErrors.password = 'Password phải có ít nhất 6 ký tự';
+      nextErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (!form.confirmPassword.trim()) {
+      nextErrors.confirmPassword = 'Vui lòng nhập lại mật khẩu';
+    } else if (form.confirmPassword !== form.password) {
+      nextErrors.confirmPassword = 'Mật khẩu nhập lại không khớp';
+    }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleSignup = async (e) => {
@@ -71,30 +81,20 @@ const Signup = () => {
         password: form.password,
       });
 
-      toast.success('Đăng ký thành công!');
+      toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
 
       setTimeout(() => {
         navigate('/login');
-      }, 1000);
+      }, 800);
     } catch (err) {
       console.error(err);
 
       const data = err.response?.data;
 
-      if (data?.field === 'email') {
-        setErrors((prev) => ({
-          ...prev,
-          email: data.message || 'Email đã tồn tại',
-        }));
-        return;
-      }
-
-      if (data?.field === 'username') {
-        setErrors((prev) => ({
-          ...prev,
-          username: data.message || 'Username đã tồn tại',
-        }));
-        return;
+      if (data?.field) {
+        setErrors({
+          [data.field]: data.message,
+        });
       }
 
       toast.error(data?.message || 'Đăng ký thất bại!');
@@ -103,147 +103,210 @@ const Signup = () => {
     }
   };
 
-  const inputClass = (field) =>
-    `w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 ${
-      errors[field]
-        ? 'border-red-500 focus:ring-red-300'
-        : 'border-gray-200 focus:ring-yellow-400'
-    }`;
-
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center px-6 py-12">
+    <div className="flex min-h-screen bg-gray-900">
       <Toaster position="bottom-right" reverseOrder={false} />
 
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
-        <div className="text-center mb-8">
-          <div className="flex justify-center items-center gap-2 mb-4">
-            <span className="material-symbols-outlined text-yellow-500 text-4xl">
-              diamond
-            </span>
-
-            <h1 className="text-3xl font-bold text-gray-900">SHIMORI</h1>
-          </div>
-
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Create Account
-          </h2>
-
-          <p className="text-gray-500">
-            Start crafting your jewelry collection
-          </p>
+      <div className="hidden lg:w-1/2 lg:flex lg:flex-col lg:justify-between bg-gradient-to-b from-gray-900 to-gray-800 p-10 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute w-96 h-96 bg-amber-500 rounded-full blur-3xl -top-20 -left-20"></div>
+          <div className="absolute w-96 h-96 bg-amber-400 rounded-full blur-3xl top-40 -right-40"></div>
+          <div className="absolute w-96 h-96 bg-amber-500 rounded-full blur-3xl bottom-20 left-1/3"></div>
         </div>
 
-        <form onSubmit={handleSignup} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Username
-            </label>
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="material-symbols-outlined text-amber-500 text-4xl">
+            diamond
+          </span>
+          <h1 className="text-white text-3xl font-bold">SHIMORI</h1>
+        </div>
 
-            <input
-              type="text"
-              value={form.username}
-              onChange={(e) => handleChange('username', e.target.value)}
-              placeholder="your_username"
-              className={inputClass('username')}
-            />
+        <div className="relative z-10 flex-1 flex items-center justify-center">
+          <img
+            src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=70&w=800&auto=format&fit=crop"
+            alt="Diamond Ring"
+            className="w-96 h-96 object-cover rounded-lg shadow-2xl"
+          />
+        </div>
 
-            {errors.username && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.username}
-              </p>
-            )}
+        <div className="relative z-10">
+          <h2 className="text-white text-3xl font-bold mb-3">
+            Create your SHIMORI account.
+          </h2>
+          <p className="text-gray-300 text-lg">
+            Save designs, continue drafts, and build your jewelry collection.
+          </p>
+        </div>
+      </div>
+
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6 py-12 sm:px-12">
+        <div className="w-full max-w-md">
+          <div className="mb-10">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              Create Account
+            </h1>
+            <p className="text-gray-600">
+              Join SHIMORI and start designing your own jewelry.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Full Name
-            </label>
+          <form onSubmit={handleSignup} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
 
-            <input
-              type="text"
-              value={form.fullName}
-              onChange={(e) => handleChange('fullName', e.target.value)}
-              placeholder="Nguyen Van A"
-              className={inputClass('fullName')}
-            />
-
-            {errors.fullName && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.fullName}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
-            </label>
-
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => handleChange('email', e.target.value)}
-              placeholder="name@example.com"
-              className={inputClass('email')}
-            />
-
-            {errors.email && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.email}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-
-            <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'}
-                value={form.password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                placeholder="●●●●●●●●"
-                className={`${inputClass('password')} pr-12`}
+                type="text"
+                value={form.username}
+                onChange={(e) => handleChange('username', e.target.value)}
+                placeholder="demo"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
+                  errors.username
+                    ? 'border-red-400 focus:ring-red-300'
+                    : 'border-gray-200 focus:ring-yellow-400'
+                }`}
               />
 
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
-              >
-                <span className="material-symbols-outlined">
-                  {showPassword ? 'visibility_off' : 'visibility'}
-                </span>
-              </button>
+              {errors.username && (
+                <p className="text-red-500 text-xs mt-2 font-medium">
+                  {errors.username}
+                </p>
+              )}
             </div>
 
-            {errors.password && (
-              <p className="text-red-500 text-xs mt-1">
-                {errors.password}
-              </p>
-            )}
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name
+              </label>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 py-3 rounded-lg font-bold text-lg transition-all"
-          >
-            {loading ? 'Creating Account...' : 'Create Account'}
-          </button>
-        </form>
+              <input
+                type="text"
+                value={form.fullName}
+                onChange={(e) => handleChange('fullName', e.target.value)}
+                placeholder="Shimori User"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
+                  errors.fullName
+                    ? 'border-red-400 focus:ring-red-300'
+                    : 'border-gray-200 focus:ring-yellow-400'
+                }`}
+              />
 
-        <p className="text-center text-gray-600 mt-6">
-          Already have an account?{' '}
-          <Link
-            to="/login"
-            className="font-semibold text-yellow-500 hover:text-yellow-600"
-          >
-            Sign In
-          </Link>
-        </p>
+              {errors.fullName && (
+                <p className="text-red-500 text-xs mt-2 font-medium">
+                  {errors.fullName}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email
+              </label>
+
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                placeholder="name@example.com"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
+                  errors.email
+                    ? 'border-red-400 focus:ring-red-300'
+                    : 'border-gray-200 focus:ring-yellow-400'
+                }`}
+              />
+
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-2 font-medium">
+                  {errors.email}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  placeholder="●●●●●●●●"
+                  className={`w-full px-4 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
+                    errors.password
+                      ? 'border-red-400 focus:ring-red-300'
+                      : 'border-gray-200 focus:ring-yellow-400'
+                  }`}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
+              </div>
+
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-2 font-medium">
+                  {errors.password}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password
+              </label>
+
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={form.confirmPassword}
+                onChange={(e) =>
+                  handleChange('confirmPassword', e.target.value)
+                }
+                placeholder="●●●●●●●●"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
+                  errors.confirmPassword
+                    ? 'border-red-400 focus:ring-red-300'
+                    : 'border-gray-200 focus:ring-yellow-400'
+                }`}
+              />
+
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-xs mt-2 font-medium">
+                  {errors.confirmPassword}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 py-3 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 mt-8"
+            >
+              {loading ? 'Creating...' : 'Create Account'}
+              <span className="material-symbols-outlined text-xl">
+                arrow_forward
+              </span>
+            </button>
+          </form>
+
+          <p className="text-center text-gray-600 mt-8">
+            Already have an account?{' '}
+            <Link
+              to="/login"
+              className="font-semibold text-yellow-500 hover:text-yellow-600"
+            >
+              Sign In
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

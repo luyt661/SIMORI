@@ -8,17 +8,42 @@ const Login = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const nextErrors = {};
+
+    if (!email.trim()) {
+      nextErrors.email = 'Email không được để trống';
+    } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+      nextErrors.email = 'Email không hợp lệ';
+    }
+
+    if (!password.trim()) {
+      nextErrors.password = 'Mật khẩu không được để trống';
+    } else if (password.length < 6) {
+      nextErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+
+    setErrors(nextErrors);
+
+    return Object.keys(nextErrors).length === 0;
+  };
+
   const handleSignIn = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) return;
 
     try {
       setLoading(true);
 
       const res = await api.post('/auth/login', {
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -31,29 +56,27 @@ const Login = () => {
       localStorage.setItem('token', token);
       localStorage.setItem('shimori_logged_in', 'true');
 
-      toast.success('Đăng nhập thành công! Đang chuyển hướng...', {
-        style: {
-          background: '#1a1a1a',
-          color: '#fff',
-          fontSize: '11px',
-          fontWeight: 'bold',
-        },
-      });
+      if (res.data.user) {
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+      }
+
+      toast.success('Đăng nhập thành công!');
 
       setTimeout(() => {
         navigate('/home');
-      }, 800);
+      }, 700);
     } catch (err) {
       console.error(err);
 
-      toast.error('Sai email hoặc mật khẩu!', {
-        style: {
-          background: '#1a1a1a',
-          color: '#fff',
-          fontSize: '11px',
-          fontWeight: 'bold',
-        },
-      });
+      const data = err.response?.data;
+
+      if (data?.field) {
+        setErrors({
+          [data.field]: data.message,
+        });
+      }
+
+      toast.error(data?.message || 'Sai email hoặc mật khẩu!');
     } finally {
       setLoading(false);
     }
@@ -70,13 +93,11 @@ const Login = () => {
           <div className="absolute w-96 h-96 bg-amber-500 rounded-full blur-3xl bottom-20 left-1/3"></div>
         </div>
 
-        <div className="relative z-10">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-amber-500 text-4xl">
-              diamond
-            </span>
-            <h1 className="text-white text-3xl font-bold">SHIMORI</h1>
-          </div>
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="material-symbols-outlined text-amber-500 text-4xl">
+            diamond
+          </span>
+          <h1 className="text-white text-3xl font-bold">SHIMORI</h1>
         </div>
 
         <div className="relative z-10 flex-1 flex items-center justify-center">
@@ -114,20 +135,26 @@ const Login = () => {
                 Email
               </label>
 
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                  <span className="material-symbols-outlined text-xl">mail</span>
-                </span>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setErrors((prev) => ({ ...prev, email: '' }));
+                }}
+                placeholder="name@example.com"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
+                  errors.email
+                    ? 'border-red-400 focus:ring-red-300'
+                    : 'border-gray-200 focus:ring-yellow-400'
+                }`}
+              />
 
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-gray-900 placeholder:text-gray-400"
-                  required
-                />
-              </div>
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-2 font-medium">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -145,35 +172,43 @@ const Login = () => {
               </div>
 
               <div className="relative">
-                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
-                  <span className="material-symbols-outlined text-xl">lock</span>
-                </span>
-
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setErrors((prev) => ({ ...prev, password: '' }));
+                  }}
                   placeholder="●●●●●●●●"
-                  className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent text-gray-900 placeholder:text-gray-400"
-                  required
+                  className={`w-full px-4 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
+                    errors.password
+                      ? 'border-red-400 focus:ring-red-300'
+                      : 'border-gray-200 focus:ring-yellow-400'
+                  }`}
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <span className="material-symbols-outlined text-xl">
                     {showPassword ? 'visibility_off' : 'visibility'}
                   </span>
                 </button>
               </div>
+
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-2 font-medium">
+                  {errors.password}
+                </p>
+              )}
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 py-3 rounded-lg font-bold text-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 mt-8"
+              className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 py-3 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 mt-8"
             >
               {loading ? 'Signing In...' : 'Sign In'}
               <span className="material-symbols-outlined text-xl">
