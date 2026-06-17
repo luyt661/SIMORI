@@ -720,17 +720,17 @@ const DesignStudio = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-white font-['Manrope'] overflow-hidden text-[#1a1a1a]">
+    <div className="min-h-dvh lg:h-dvh flex flex-col bg-white font-['Manrope'] overflow-x-hidden lg:overflow-hidden text-[#1a1a1a]">
       <Toaster position="bottom-right" reverseOrder={false} />
 
-      <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-8 shrink-0 z-[130]">
-        <div className="flex items-center gap-4">
+      <header className="min-h-16 border-b border-gray-100 bg-white flex items-center justify-between gap-3 px-3 py-2 sm:px-5 lg:px-8 shrink-0 z-[130]">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
             <span className="material-symbols-outlined text-2xl">diamond</span>
             <h2 className="text-xl font-extrabold tracking-tighter uppercase">SHIMORI</h2>
           </div>
           {autoSaveStatus !== 'idle' && (
-            <div className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full transition-all ${
+            <div className={`hidden sm:flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full transition-all ${
               autoSaveStatus === 'saving' 
                 ? 'bg-yellow-50 text-yellow-700' 
                 : 'bg-green-50 text-green-700'
@@ -740,20 +740,21 @@ const DesignStudio = () => {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3 lg:gap-6">
           <button 
             onClick={copyShareLink}
-            className="flex items-center gap-1.5 border border-gray-200 px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider hover:bg-gray-50 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 border border-gray-200 px-3 lg:px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider hover:bg-gray-50 transition-colors"
           >
-            <span className="material-symbols-outlined text-xs">share</span> Share Link
+            <span className="material-symbols-outlined text-sm">share</span>
+            <span className="hidden lg:inline">Share Link</span>
           </button>
           
           <button 
             onClick={() => setShowSavedModal(true)}
-            className="flex items-center gap-1.5 border border-gray-200 px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider hover:bg-gray-50 transition-colors relative"
+            className="hidden md:flex items-center gap-1.5 border border-gray-200 px-3 lg:px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider hover:bg-gray-50 transition-colors relative"
           >
-            <span className="material-symbols-outlined text-xs">favorite</span> 
-            Collection
+            <span className="material-symbols-outlined text-sm">favorite</span>
+            <span className="hidden lg:inline">Collection</span>
             {savedDesigns.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-[#b08d26] text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{savedDesigns.length}</span>
             )}
@@ -761,10 +762,10 @@ const DesignStudio = () => {
 
           <button 
             onClick={() => { setCheckoutStep('cart'); setShowCart(true); }}
-            className="bg-black text-white px-5 py-2 rounded text-[9px] font-black uppercase tracking-widest hover:bg-[#b08d26] transition-colors flex items-center gap-2 relative"
+            className="bg-black text-white h-10 px-3 lg:px-5 rounded text-[9px] font-black uppercase tracking-widest hover:bg-[#b08d26] transition-colors flex items-center gap-2 relative"
           >
-            <span className="material-symbols-outlined text-xs">shopping_bag</span> 
-            Bag
+            <span className="material-symbols-outlined text-sm">shopping_bag</span>
+            <span className="hidden sm:inline">Bag</span>
             {cart.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 bg-[#facc15] text-black text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>
             )}
@@ -780,15 +781,16 @@ const DesignStudio = () => {
               });
               navigate('/login');
             }}
-            className="border border-red-200 text-red-600 px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider hover:bg-red-50 transition-colors"
+            className="flex h-10 items-center gap-1 border border-red-200 text-red-600 px-3 lg:px-4 rounded text-[9px] font-black uppercase tracking-wider hover:bg-red-50 transition-colors"
           >
-            <span className="material-symbols-outlined text-xs">logout</span> Logout
+            <span className="material-symbols-outlined text-sm">logout</span>
+            <span className="hidden lg:inline">Logout</span>
           </button>
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden min-h-0">
-        <aside className="w-[400px] border-r border-gray-100 bg-white overflow-y-auto no-scrollbar p-8 shrink-0 h-full">
+      <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden min-h-0 pb-36 lg:pb-24">
+        <aside className="order-2 lg:order-1 w-full lg:w-[400px] border-t lg:border-t-0 lg:border-r border-gray-100 bg-white overflow-visible lg:overflow-y-auto no-scrollbar p-4 sm:p-6 lg:p-8 shrink-0 h-auto lg:h-full">
           <div className="mb-8">
             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#b08d26] mb-1.5">Design Name</h2>
             <div className="relative group/name max-w-xs">
@@ -981,20 +983,23 @@ const DesignStudio = () => {
             </div>
           </SidebarSection>
 
-          <div className="h-40"></div>
+          <div className="h-6 lg:h-40"></div>
         </aside>
 
-        <main className="flex-1 bg-[#fcfcfc] overflow-y-auto no-scrollbar relative flex flex-col h-full">
-          <div className="sticky top-8 flex justify-center z-20 pointer-events-none shrink-0">
+        <main className="order-1 lg:order-2 w-full flex-none lg:flex-1 bg-[#fcfcfc] overflow-visible lg:overflow-y-auto no-scrollbar relative flex flex-col h-auto lg:h-full">
+          <div className="sticky top-3 lg:top-8 flex justify-center z-20 pointer-events-none shrink-0 px-3">
             <div className="bg-white/90 backdrop-blur px-5 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-3">
                <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-               <span className="text-[9px] font-black uppercase tracking-widest">Render: Ultra-High (Physical refraction)</span>
+               <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-widest text-center">
+                 Render: Ultra-High
+                 <span className="hidden sm:inline"> (Physical refraction)</span>
+               </span>
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center p-10 min-h-[600px] shrink-0">
-            <div className="relative group flex flex-col items-center">
-              <div style={{ width: 'min(70vw, 900px)', height: 'min(70vw, 600px)' }}>
+          <div className="flex flex-col items-center justify-center p-3 sm:p-6 lg:p-10 min-h-[380px] sm:min-h-[520px] lg:min-h-[600px] shrink-0">
+            <div className="relative group flex w-full flex-col items-center">
+              <div className="w-full max-w-[900px] h-[340px] sm:h-[480px] lg:h-[600px]">
                 <JewelryViewer
                   ringUrl={settingModelUrl}
                   gemUrl={gemModelUrl}
@@ -1005,7 +1010,7 @@ const DesignStudio = () => {
                   lightingPreset={lightingPreset}
                 />
               </div>
-              <div className="mt-8 flex flex-col items-center gap-2">
+              <div className="mt-2 sm:mt-6 lg:mt-8 flex flex-col items-center gap-2">
                 <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100 cursor-pointer">
                   <span className="material-symbols-outlined text-[#b08d26]">open_with</span>
                 </div>
@@ -1014,15 +1019,15 @@ const DesignStudio = () => {
             </div>
           </div>
 
-          <div className="bg-white border-t border-gray-100 px-10 py-8 flex gap-8 shrink-0 overflow-x-auto no-scrollbar">
-            <div className="shrink-0 border-r border-gray-100 pr-8 flex flex-col justify-center">
+          <div className="bg-white border-t border-gray-100 px-4 sm:px-6 lg:px-10 py-5 lg:py-8 flex gap-4 lg:gap-8 shrink-0 overflow-x-auto no-scrollbar">
+            <div className="hidden sm:flex shrink-0 border-r border-gray-100 pr-6 lg:pr-8 flex-col justify-center">
                <p className="text-[9px] font-black text-[#b08d26] uppercase tracking-widest mb-1">Quick Presets</p>
                <p className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">Faster Switching</p>
             </div>
             <div className="flex gap-4">
               {gemstones.map((gem) => (
                 <button key={gem.name} onClick={() => setConfig({...config, gemstone: gem.name})}
-                  className={`flex flex-col items-center min-w-[150px] p-5 rounded-xl border transition-all ${config.gemstone === gem.name ? 'border-[#b08d26] bg-gray-50' : 'border-transparent hover:bg-gray-50'}`}>
+                  className={`flex flex-col items-center min-w-[110px] sm:min-w-[150px] p-3 sm:p-5 rounded-xl border transition-all ${config.gemstone === gem.name ? 'border-[#b08d26] bg-gray-50' : 'border-transparent hover:bg-gray-50'}`}>
                   <div className={`w-4 h-4 rotate-45 ${gem.color} border border-gray-200 mb-3`}></div>
                   <span className="text-[9px] font-black uppercase tracking-tighter text-center">{gem.label} {gem.name}</span>
                 </button>
@@ -1030,7 +1035,7 @@ const DesignStudio = () => {
             </div>
           </div>
 
-          <div className="bg-white border-t border-gray-50 py-5 px-10 flex items-center justify-between text-[9px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
+          <div className="hidden lg:flex bg-white border-t border-gray-50 py-5 px-10 items-center justify-between text-[9px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
             <div className="flex gap-8">
               <span className="flex items-center gap-2 text-[#00c853] font-black"><div className="w-1.5 h-1.5 rounded-full bg-[#00c853]"></div> Engine Active</span>
               <span>Metal Density: 21.45 g/cm³</span>
@@ -1041,18 +1046,18 @@ const DesignStudio = () => {
               <span>© 2026 Unified 3D Studio</span>
             </div>
           </div>
-          <div className="h-32 shrink-0"></div>
+          <div className="h-4 lg:h-32 shrink-0"></div>
         </main>
       </div>
 
       {/* PRICE BREAKDOWN BAR & BUY ACTION */}
       <div className="fixed bottom-0 left-0 right-0 z-[120] pointer-events-none">
         <div
-          className={`pointer-events-auto bg-white/95 backdrop-blur-xl border-t border-gray-100 px-12 py-12 transition-all duration-500 transform shadow-[0_-30px_60px_rgba(0,0,0,0.12)] ${showPriceBreakdown ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}
+          className={`pointer-events-auto max-h-[60dvh] overflow-y-auto bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-5 sm:px-6 lg:px-12 lg:py-12 transition-all duration-500 transform shadow-[0_-30px_60px_rgba(0,0,0,0.12)] ${showPriceBreakdown ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}
           onMouseEnter={() => setShowPriceBreakdown(true)}
           onMouseLeave={() => setShowPriceBreakdown(false)}
         >
-          <div className="max-w-7xl mx-auto grid grid-cols-4 gap-16">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-16">
             {priceDetails.map((item, idx) => (
               <div key={idx}>
                 <div className="flex items-center gap-2 mb-4">
@@ -1077,34 +1082,40 @@ const DesignStudio = () => {
           </div>
         </div>
 
-        <div className="pointer-events-auto h-24 bg-white border-t border-gray-100 flex items-center justify-between px-12 relative shadow-lg">
-          <div className="flex gap-16 items-center">
+        <div className="pointer-events-auto flex items-center justify-between gap-3 bg-white border-t border-gray-100 px-3 py-3 sm:px-6 lg:px-12 lg:h-24 relative shadow-lg safe-bottom">
+          <div className="flex min-w-0 items-center justify-between gap-3 lg:gap-16">
             <div className="flex flex-col">
-              <p className="text-[9px] font-black uppercase text-gray-400 mb-1 flex items-center gap-2"
-                 onMouseEnter={() => setShowPriceBreakdown(true)}
-                 onMouseLeave={() => setShowPriceBreakdown(false)}>
-                Total <span className="material-symbols-outlined text-[13px] text-[#b08d26] cursor-pointer">info</span>
-              </p>
+              <button
+                type="button"
+                onClick={() => setShowPriceBreakdown((current) => !current)}
+                className="text-[9px] font-black uppercase text-gray-400 mb-1 flex items-center gap-2"
+                aria-expanded={showPriceBreakdown}
+              >
+                Total
+                <span className="material-symbols-outlined text-[14px] text-[#b08d26]">
+                  {showPriceBreakdown ? 'expand_more' : 'info'}
+                </span>
+              </button>
               <div className="flex items-baseline gap-4">
                 <h3 className="text-2xl font-black tracking-tighter text-black">
                   {priceSource === 'loading' ? '...' : `$${totalPrice.toLocaleString()}`}
                 </h3>
-                <span className="text-[8px] text-green-600 font-black bg-green-50 px-2 py-1 rounded uppercase tracking-wider">In Stock</span>
+                <span className="hidden sm:inline text-[8px] text-green-600 font-black bg-green-50 px-2 py-1 rounded uppercase tracking-wider">In Stock</span>
               </div>
             </div>
 
             <button 
               onClick={saveToCollection}
-              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#b08d26] border-b-2 border-[#b08d26] hover:text-black hover:border-black transition-all"
+              className="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#b08d26] border-b-2 border-[#b08d26] hover:text-black hover:border-black transition-all"
             >
               <span className="material-symbols-outlined text-sm">favorite</span> Save to Collection
             </button>
           </div>
 
-          <div className="flex gap-4">
+          <div className="grid shrink-0 grid-cols-2 gap-2 sm:gap-4 lg:flex">
             <button
               onClick={addItemToCart}
-              className="bg-black text-white px-8 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] hover:bg-[#b08d26] transition-all"
+              className="bg-black text-white px-3 sm:px-6 lg:px-8 py-3 lg:py-4 rounded-xl font-black uppercase text-[8px] sm:text-[10px] tracking-wider lg:tracking-[0.3em] hover:bg-[#b08d26] transition-all"
             >
               Add To Bag
             </button>
@@ -1113,10 +1124,11 @@ const DesignStudio = () => {
               onMouseEnter={() => setShowPriceBreakdown(true)}
               onMouseLeave={() => setShowPriceBreakdown(false)}
               onClick={proceedToProductDetail}
-              className="bg-[#b08d26] text-white px-10 py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] flex items-center gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10"
+              className="bg-[#b08d26] text-white px-3 sm:px-6 lg:px-10 py-3 lg:py-4 rounded-xl font-black uppercase text-[8px] sm:text-[10px] tracking-wider lg:tracking-[0.3em] flex items-center justify-center gap-2 lg:gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10"
             >
-              Xem Chi Tiết & Đặt Hàng
-              <span className="material-symbols-outlined text-base">
+              <span className="sm:hidden">Đặt Hàng</span>
+              <span className="hidden sm:inline">Xem Chi Tiết & Đặt Hàng</span>
+              <span className="material-symbols-outlined text-sm lg:text-base">
                 arrow_forward
               </span>
             </button>
@@ -1126,9 +1138,9 @@ const DesignStudio = () => {
 
       {/* MODAL: SAVED COLLECTIONS */}
       {showSavedModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-6 animate-fadeIn">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
           <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
-            <header className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+            <header className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
               <div>
                 <span className="text-[10px] font-black text-[#b08d26] uppercase tracking-widest">Personal Vault</span>
                 <h3 className="text-xl font-black uppercase">My Saved Designs</h3>
@@ -1138,7 +1150,7 @@ const DesignStudio = () => {
               </button>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-8 bg-gray-50/50">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50/50">
               {savedDesigns.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                   <span className="material-symbols-outlined text-5xl text-gray-300 mb-4">favorite_border</span>
@@ -1148,7 +1160,7 @@ const DesignStudio = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {savedDesigns.map((d) => (
-                    <div key={d.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between group hover:border-[#b08d26] transition-all">
+                    <div key={d.id} className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between group hover:border-[#b08d26] transition-all">
                       <div>
                         <div className="flex justify-between items-start mb-4">
                           <div>
@@ -1190,8 +1202,8 @@ const DesignStudio = () => {
       )}
 
       {/* DRAWER: LUXURY CHECKOUT & CART */}
-      <div className={`fixed inset-y-0 right-0 w-[450px] bg-white z-[180] shadow-[0_0_60px_rgba(0,0,0,0.15)] flex flex-col transition-transform duration-500 transform ${showCart ? 'translate-x-0' : 'translate-x-full'}`}>
-        <header className="px-8 py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+      <div className={`fixed inset-y-0 right-0 w-full sm:w-[450px] max-w-full bg-white z-[180] shadow-[0_0_60px_rgba(0,0,0,0.15)] flex flex-col transition-transform duration-500 transform ${showCart ? 'translate-x-0' : 'translate-x-full'}`}>
+        <header className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-[#b08d26]">shopping_bag</span>
             <h3 className="text-md font-black uppercase tracking-wider">Your Shopping Bag</h3>
@@ -1212,7 +1224,7 @@ const DesignStudio = () => {
                 <p className="text-[10px] text-gray-400 mt-2 max-w-xs leading-relaxed">Customize your luxury item and click "Add to Bag" to begin the checkout process.</p>
               </div>
             ) : (
-              <div className="flex-1 p-6 space-y-4">
+              <div className="flex-1 p-4 sm:p-6 space-y-4">
                 {cart.map((item) => (
                   <div key={item.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative group flex gap-4">
                     <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
@@ -1240,7 +1252,7 @@ const DesignStudio = () => {
 
             {/* CART FOOTER */}
             {cart.length > 0 && (
-              <div className="border-t border-gray-100 bg-white p-8 shrink-0 space-y-6">
+              <div className="border-t border-gray-100 bg-white p-4 sm:p-8 shrink-0 space-y-4 sm:space-y-6 safe-bottom">
                 <div className="flex justify-between items-baseline">
                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order Total</span>
                   <span className="text-2xl font-black text-black">
@@ -1261,7 +1273,7 @@ const DesignStudio = () => {
         {/* SHIPPING FORM STEP */}
         {checkoutStep === 'shipping' && (
           <form onSubmit={handleCheckoutSubmit} className="flex-1 flex flex-col overflow-hidden bg-white">
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
               <div>
                 <span className="text-[8px] font-black text-[#b08d26] uppercase tracking-widest">Step 2 of 3</span>
                 <h4 className="text-md font-black uppercase mt-1">Shipping & Billing</h4>
@@ -1313,7 +1325,7 @@ const DesignStudio = () => {
               </div>
             </div>
 
-            <div className="border-t border-gray-100 bg-white p-8 shrink-0 flex gap-4">
+            <div className="border-t border-gray-100 bg-white p-4 sm:p-8 shrink-0 flex gap-2 sm:gap-4 safe-bottom">
               <button 
                 type="button"
                 onClick={() => setCheckoutStep('cart')}
@@ -1323,9 +1335,10 @@ const DesignStudio = () => {
               </button>
               <button 
                 type="submit"
-                className="flex-1 bg-black text-white hover:bg-[#b08d26] py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg"
+                className="flex-1 bg-black text-white hover:bg-[#b08d26] px-3 py-4 rounded-xl text-[9px] font-black uppercase tracking-wider sm:tracking-[0.2em] transition-all shadow-lg"
               >
-                Submit Order & Pay ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}
+                <span className="sm:hidden">Pay ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}</span>
+                <span className="hidden sm:inline">Submit Order & Pay ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}</span>
               </button>
             </div>
           </form>
@@ -1333,7 +1346,7 @@ const DesignStudio = () => {
 
         {/* ORDER SUCCESS STEP */}
         {checkoutStep === 'success' && (
-          <div className="flex-1 overflow-y-auto flex flex-col p-8 items-center justify-center text-center bg-white">
+          <div className="flex-1 overflow-y-auto flex flex-col p-4 sm:p-8 items-center justify-center text-center bg-white">
             <span className="material-symbols-outlined text-6xl text-green-600 bg-green-50 p-6 rounded-full animate-bounce mb-6">verified</span>
             <span className="text-[9px] font-black text-[#b08d26] uppercase tracking-[0.2em] mb-1">Receipt Confirmed</span>
             <h4 className="text-xl font-black uppercase text-gray-900 mb-3">Masterpiece Order Placed!</h4>

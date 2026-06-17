@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { PRODUCTS } from '../data/products';
 
@@ -8,65 +8,77 @@ const Home = () => {
   const location = useLocation();
 
   useEffect(() => {
-    if (location.hash) {
-      const id = location.hash.replace('#', '');
-      const element = document.getElementById(id);
-      if (element) {
-        setTimeout(() => {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 150);
-      }
+    if (!location.hash) return;
+
+    const id = location.hash.replace('#', '');
+    const element = document.getElementById(id);
+
+    if (element) {
+      const timer = window.setTimeout(() => {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+
+      return () => window.clearTimeout(timer);
     }
-  }, [location]);
+
+    return undefined;
+  }, [location.hash]);
 
   const handleProductClick = (item) => {
     let setting = 'Prong';
+
     if (item.id === 2) setting = 'Halo';
     else if (item.id === 3) setting = 'Channel';
-    
+
     navigate(`/design?setting=${setting}`);
   };
 
   const steps = [
-    { icon: "token", title: "Select", desc: "Choose your base metal and stone type." },
-    { icon: "Auto_Fix", title: "Customize", desc: "Adjust band width and textures in 3D." },
-    { icon: "visibility", title: "Preview", desc: "View your masterpiece in ultra-high definition." },
-    { icon: "shopping_cart", title: "Order", desc: "Handcrafted and delivered to your door." }
+    { icon: 'token', title: 'Select', desc: 'Choose your base metal and stone type.' },
+    { icon: 'Auto_Fix', title: 'Customize', desc: 'Adjust band width and textures in 3D.' },
+    { icon: 'visibility', title: 'Preview', desc: 'View your masterpiece in ultra-high definition.' },
+    { icon: 'shopping_cart', title: 'Order', desc: 'Handcrafted and delivered to your door.' },
   ];
 
   return (
-    <div className="bg-white text-slate-900 font-['Manrope'] min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-white font-['Manrope'] text-slate-900">
       <Navbar />
 
-      {/* --- HERO SECTION --- */}
-      <section className="relative w-full h-[85vh] flex items-center justify-center overflow-hidden">
+      <section className="relative flex min-h-[calc(100dvh-4rem)] w-full items-center justify-center overflow-hidden lg:h-[85vh] lg:min-h-0">
         <div className="absolute inset-0 z-0">
           <img
-            alt="High-resolution cinematic shot"
-            className="w-full h-full object-cover scale-105 animate-slow-zoom"
+            alt="High-resolution cinematic jewelry"
+            className="h-full w-full scale-105 object-cover animate-slow-zoom"
             src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?q=70&w=1200&auto=format&fit=crop"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black/70"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/10 to-black/70" />
         </div>
 
-        <div className="relative z-20 max-w-5xl px-4 text-center">
-          <h1 className="text-white text-5xl md:text-[90px] font-extrabold leading-[1] tracking-tighter mb-8 drop-shadow-2xl">
+        <div className="relative z-20 w-full max-w-5xl px-4 py-12 text-center sm:px-6">
+          <h1 className="mb-6 text-4xl font-extrabold leading-[1.02] tracking-tighter text-white drop-shadow-2xl sm:text-5xl md:text-7xl lg:mb-8 lg:text-[90px]">
             Custom Jewelry <br />
-            <span className="text-[#facc15] italic font-light serif">Design Your Story</span>
+            <span className="serif font-light italic text-[#facc15]">
+              Design Your Story
+            </span>
           </h1>
-          <p className="text-gray-200 text-lg md:text-xl font-medium mb-12 max-w-2xl mx-auto opacity-90">
+
+          <p className="mx-auto mb-8 max-w-2xl text-sm font-medium leading-relaxed text-gray-200 opacity-90 sm:text-lg md:text-xl lg:mb-12">
             Experience the art of 3D jewelry design. Craft a piece as unique as your journey with our immersive high-definition studio.
           </p>
-          <div className="flex flex-col sm:flex-row gap-5 justify-center">
+
+          <div className="mx-auto flex max-w-md flex-col justify-center gap-3 sm:max-w-none sm:flex-row sm:gap-5">
             <button
+              type="button"
               onClick={() => navigate('/design')}
-              className="bg-[#facc15] hover:bg-white text-black px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-widest shadow-2xl transition-all hover:-translate-y-1"
+              className="w-full rounded-2xl bg-[#facc15] px-6 py-4 text-xs font-black uppercase tracking-widest text-black shadow-2xl transition-all hover:-translate-y-1 hover:bg-white sm:w-auto sm:px-12 sm:py-5 sm:text-sm"
             >
               Start Designing
             </button>
+
             <button
+              type="button"
               onClick={() => navigate('/my-designs')}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-12 py-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all"
+              className="w-full rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-xs font-black uppercase tracking-widest text-white backdrop-blur-md transition-all hover:bg-white/20 sm:w-auto sm:px-12 sm:py-5 sm:text-sm"
             >
               My Designs
             </button>
@@ -74,87 +86,128 @@ const Home = () => {
         </div>
       </section>
 
-      {/* FEATURED COLLECTION - Giữ nguyên */}
-      <section id="collections" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+      <section id="collections" className="mx-auto w-full max-w-7xl scroll-mt-20 px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <div className="mb-10 flex flex-col items-start justify-between gap-5 sm:mb-16 md:flex-row md:items-end">
           <div>
-            <span className="text-[#facc15] font-black uppercase tracking-[0.3em] text-[10px]">Exquisite Selection</span>
-            <h2 className="text-slate-900 text-4xl font-black mt-2 tracking-tight uppercase">Featured Collection</h2>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#facc15]">
+              Exquisite Selection
+            </span>
+            <h2 className="mt-2 text-3xl font-black uppercase tracking-tight text-slate-900 sm:text-4xl">
+              Featured Collection
+            </h2>
           </div>
-          <button className="text-[#facc15] font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:gap-4 transition-all">
-            Shop All Collections <span className="material-symbols-outlined">arrow_right_alt</span>
+
+          <button
+            type="button"
+            className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-[#facc15] transition-all hover:gap-4"
+          >
+            Shop All Collections
+            <span className="material-symbols-outlined">arrow_right_alt</span>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-10">
           {PRODUCTS.map((item) => (
-            <div key={item.id} className="group cursor-pointer" onClick={() => handleProductClick(item)}>
-              <div className="relative aspect-[4/5] overflow-hidden rounded-3xl mb-6 shadow-xl bg-gray-50 border border-gray-100">
-                <img alt={item.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src={item.image} />
+            <article
+              key={item.id}
+              className="group cursor-pointer"
+              onClick={() => handleProductClick(item)}
+            >
+              <div className="relative mb-5 aspect-[4/5] overflow-hidden rounded-3xl border border-gray-100 bg-gray-50 shadow-xl sm:mb-6">
+                <img
+                  alt={item.title}
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  src={item.image}
+                />
+
                 <button
-                   onClick={(e) => { e.stopPropagation(); handleProductClick(item); }}
-                   className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-black uppercase px-6 py-3 rounded-full opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all"
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleProductClick(item);
+                  }}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 translate-y-0 rounded-full bg-white px-5 py-3 text-[10px] font-black uppercase text-black opacity-100 shadow-lg transition-all sm:bottom-6 sm:translate-y-4 sm:px-6 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100"
                 >
                   Customize
                 </button>
               </div>
-              <h3 className="text-slate-900 text-lg font-black tracking-tight uppercase">{item.title}</h3>
-              <p className="text-[#facc15] font-bold text-sm tracking-widest uppercase mt-1">From {item.price}</p>
-            </div>
+
+              <h3 className="text-lg font-black uppercase tracking-tight text-slate-900">
+                {item.title}
+              </h3>
+              <p className="mt-1 text-sm font-bold uppercase tracking-widest text-[#facc15]">
+                From {item.price}
+              </p>
+            </article>
           ))}
         </div>
       </section>
 
-      {/* HOW IT WORKS - Giữ nguyên */}
-      <section id="process" className="bg-gray-50 border-y border-gray-100 py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-slate-900 text-4xl font-black mb-20 tracking-tight uppercase">How It Works</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-                {steps.map((step, index) => (
-                  <div key={index} className="flex flex-col items-center group">
-                      <div className="w-20 h-20 bg-white border border-gray-100 shadow-xl text-[#facc15] rounded-full flex items-center justify-center mb-8 group-hover:bg-[#facc15] group-hover:text-black transition-all">
-                          <span className="material-symbols-outlined text-3xl">{step.icon}</span>
-                      </div>
-                      <h3 className="text-sm font-black uppercase tracking-widest mb-4">{step.title}</h3>
-                      <p className="text-gray-500 text-xs leading-relaxed max-w-[180px]">{step.desc}</p>
-                  </div>
-                ))}
-            </div>
+      <section id="process" className="scroll-mt-20 border-y border-gray-100 bg-gray-50 py-16 lg:py-24">
+        <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+          <h2 className="mb-12 text-3xl font-black uppercase tracking-tight text-slate-900 sm:text-4xl lg:mb-20">
+            How It Works
+          </h2>
+
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12">
+            {steps.map((step) => (
+              <div key={step.title} className="group flex flex-col items-center">
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-gray-100 bg-white text-[#facc15] shadow-xl transition-all group-hover:bg-[#facc15] group-hover:text-black sm:mb-8 sm:h-20 sm:w-20">
+                  <span className="material-symbols-outlined text-3xl">{step.icon}</span>
+                </div>
+                <h3 className="mb-3 text-sm font-black uppercase tracking-widest sm:mb-4">
+                  {step.title}
+                </h3>
+                <p className="max-w-[220px] text-xs leading-relaxed text-gray-500 sm:max-w-[180px]">
+                  {step.desc}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ABOUT SECTION */}
-      <section id="about" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <section id="about" className="mx-auto w-full max-w-7xl scroll-mt-20 px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
-            <span className="text-[#facc15] font-black uppercase tracking-[0.3em] text-[10px]">Our Story</span>
-            <h2 className="text-slate-900 text-4xl font-black mt-4 mb-8 tracking-tight uppercase">About SHIMORI</h2>
-            <p className="text-gray-600 text-lg leading-relaxed mb-6">
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#facc15]">
+              Our Story
+            </span>
+            <h2 className="mb-6 mt-4 text-3xl font-black uppercase tracking-tight text-slate-900 sm:text-4xl lg:mb-8">
+              About SHIMORI
+            </h2>
+            <p className="mb-5 text-base leading-relaxed text-gray-600 sm:text-lg lg:mb-6">
               SHIMORI is redefining luxury jewelry through the fusion of traditional craftsmanship and cutting-edge 3D technology. We believe every piece tells a unique story.
             </p>
-            <p className="text-gray-600 text-lg leading-relaxed mb-8">
-              Our artisans bring decades of expertise to create heirloom-quality pieces while our immersive 3D studio empowers you to design exactly what you envision. From initial concept to final masterpiece, we're with you every step of the way.
+            <p className="mb-8 text-base leading-relaxed text-gray-600 sm:text-lg">
+              Our artisans bring decades of expertise to create heirloom-quality pieces while our immersive 3D studio empowers you to design exactly what you envision. From initial concept to final masterpiece, we&apos;re with you every step of the way.
             </p>
-            <button className="bg-[#facc15] text-black px-8 py-3 rounded-lg font-black uppercase text-sm tracking-widest hover:bg-black hover:text-[#facc15] transition-all">
+            <button
+              type="button"
+              className="rounded-lg bg-[#facc15] px-8 py-3 text-sm font-black uppercase tracking-widest text-black transition-all hover:bg-black hover:text-[#facc15]"
+            >
               Learn More
             </button>
           </div>
+
           <div className="relative">
             <img
               src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=70&w=800&auto=format&fit=crop"
               alt="About SHIMORI"
               loading="lazy"
-              className="rounded-3xl shadow-2xl"
+              className="w-full rounded-3xl object-cover shadow-2xl"
             />
-            <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-[#facc15]/20 rounded-full blur-3xl"></div>
+            <div className="absolute -bottom-6 -right-6 -z-10 h-36 w-36 rounded-full bg-[#facc15]/20 blur-3xl sm:h-48 sm:w-48" />
           </div>
         </div>
       </section>
 
-      <footer className="py-12 text-center border-t border-gray-100 mt-auto">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">© 2026 SHIMORI UNIFIED STUDIO</p>
+      <footer className="mt-auto border-t border-gray-100 px-4 py-10 text-center sm:py-12">
+        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400 sm:text-[10px] sm:tracking-[0.3em]">
+          © 2026 SHIMORI UNIFIED STUDIO
+        </p>
       </footer>
-
     </div>
   );
 };
