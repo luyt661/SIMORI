@@ -21,7 +21,6 @@ const ProductDetail = () => {
 
   const product = PRODUCTS.find((p) => p.id === Number(id)) || PRODUCTS[0];
 
-  // Parse query parameters
   const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const isCustomized = queryParams.get('customized') === 'true';
   const customName = useMemo(() => queryParams.get('name') || '', [queryParams]);
@@ -38,8 +37,7 @@ const ProductDetail = () => {
         lighting: queryParams.get('lighting') || 'studio',
       };
     }
-    
-    // Standard default configurations based on product ID
+
     let setting = 'Prong';
     let gemstone = 'Diamond';
     let material = 'Silver';
@@ -91,7 +89,6 @@ const ProductDetail = () => {
     return product.price;
   }, [isCustomized, queryParams, product.price]);
 
-  // Calculate 3D viewer URLs and properties
   const settingModelUrl = useMemo(() => {
     const target = normalize(activeConfig.setting);
     const match = modelGroups.settings.find((m) => normalize(m.name) === target || normalize(m.key) === target);
@@ -116,14 +113,12 @@ const ProductDetail = () => {
 
   const handleCustomize = () => {
     if (isCustomized) {
-      // Carry over exact customization query string
       navigate(`/design?${queryParams.toString()}`);
       return;
     }
 
     const params = new URLSearchParams();
-    
-    // Default mapped values
+
     let gemstone = 'Diamond';
     let material = 'Silver';
     let setting = 'Prong';
@@ -166,7 +161,7 @@ const ProductDetail = () => {
     }
 
     const gemstoneColors = {
-      'Diamond': 'bg-white shadow-inner border border-gray-200',
+      'Diamond': 'bg-white/20 shadow-inner border border-white/10',
       'Sapphire': 'bg-blue-600',
       'Ruby': 'bg-red-600',
       'Emerald': 'bg-emerald-600',
@@ -190,17 +185,17 @@ const ProductDetail = () => {
       engraving: isCustomized ? (queryParams.get('engraving') || '') : '',
       engravingFont: isCustomized ? (queryParams.get('font') || 'Script') : 'Script',
       price: isCustomized ? parseInt(queryParams.get('price') || '0', 10) : parseInt(product.price.replace(/[^0-9]/g, '')),
-      gemColor: isCustomized 
+      gemColor: isCustomized
         ? (gemstoneColors[queryParams.get('gemstone') || 'Diamond'] || 'bg-gray-200')
-        : 'bg-white shadow-inner border border-gray-200',
+        : 'bg-white/20 shadow-inner border border-white/10',
     };
 
     const updated = [...cart, cartItem];
     localStorage.setItem('shimori_cart', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
-    
+
     toast.success(`Added ${cartItem.title} to Cart!`, {
-      style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+      style: { background: '#6A452D', color: '#FFF3E4', fontSize: '11px', fontWeight: 'bold', border: '1px solid rgba(243,214,182,0.25)' }
     });
 
     setTimeout(() => {
@@ -209,7 +204,7 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] font-['Manrope'] min-h-screen text-slate-900 dark:text-white">
+    <div className="bg-[#5A3925] min-h-screen text-[#FFF3E4]" style={{ fontFamily: "'Inter', sans-serif" }}>
       <Toaster position="bottom-right" reverseOrder={false} />
       <Navbar />
 
@@ -219,7 +214,7 @@ const ProductDetail = () => {
 
           {/* LEFT: INTERACTIVE 3D VIEWER */}
           <div className="lg:col-span-7">
-            <div className="aspect-square bg-slate-100 dark:bg-[#2a2a2a] rounded-3xl overflow-hidden group relative shadow-2xl">
+            <div className="aspect-square bg-[#6B442B] rounded-3xl overflow-hidden group relative shadow-2xl">
               {settingModelUrl && gemModelUrl && (
                 <JewelryViewer
                   ringUrl={settingModelUrl}
@@ -239,45 +234,45 @@ const ProductDetail = () => {
 
           {/* RIGHT: PRODUCT INFO */}
           <div className="lg:col-span-5 flex flex-col h-full">
-            <nav className="flex text-[9px] uppercase tracking-[0.15em] text-slate-400 mb-3 gap-2">
-              <a className="hover:text-[#facc15]" href="#" onClick={(e) => { e.preventDefault(); navigate('/home'); }}>Home</a>
+            <nav className="flex text-[9px] uppercase tracking-[0.15em] text-[#D7A36F] mb-3 gap-2">
+              <a className="hover:text-[#F3D6B6]" href="#" onClick={(e) => { e.preventDefault(); navigate('/home'); }}>Home</a>
               <span>/</span>
-              <a className="hover:text-[#facc15]" href="#" onClick={(e) => e.preventDefault()}>Engagement Rings</a>
+              <a className="hover:text-[#F3D6B6]" href="#" onClick={(e) => e.preventDefault()}>Engagement Rings</a>
             </nav>
 
             {isCustomized && (
-              <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-black px-3 py-1 rounded-full text-[8px] uppercase tracking-[0.15em] font-black mb-2 w-fit shadow-md">
+              <div className="inline-flex items-center gap-1.5 bg-gradient-to-r from-[#D7A36F] to-[#F3D6B6] text-black px-3 py-1 rounded-full text-[8px] uppercase tracking-[0.15em] font-black mb-2 w-fit shadow-md">
                 <span className="material-symbols-outlined !text-[9px] animate-pulse">workspace_premium</span>
                 Customized
               </div>
             )}
 
-            <h2 className="text-2xl md:text-3xl font-black mb-2 leading-tight tracking-tighter uppercase">
+            <h2 className="text-2xl md:text-3xl font-black mb-2 leading-tight tracking-tighter uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
               {isCustomized && customName ? `Bespoke Ring - ${customName}` : product.fullTitle}
             </h2>
 
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex text-[#facc15]">
+              <div className="flex text-[#D7A36F]">
                 {[1,2,3,4].map(i => <span key={i} className="material-symbols-outlined !text-xs">star</span>)}
                 <span className="material-symbols-outlined !text-xs">star_half</span>
               </div>
-              <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">{product.rating} ({product.reviews})</span>
+              <span className="text-[8px] font-bold uppercase tracking-widest text-[#B99372]">{product.rating} ({product.reviews})</span>
             </div>
 
-            <p className="text-3xl font-light mb-4 text-[#facc15] tracking-tighter">
+            <p className="text-3xl font-light mb-4 text-[#D7A36F] tracking-tighter">
               {isCustomized ? displayPrice : `From ${product.price}`}
             </p>
 
             <div className="space-y-3 mb-4">
-              <p className="text-slate-600 dark:text-gray-400 leading-relaxed text-xs font-medium line-clamp-2">
+              <p className="text-[#E8C9A8] leading-relaxed text-xs font-medium line-clamp-2">
                 {product.description}
               </p>
 
-              <div className="grid grid-cols-2 gap-y-4 border-y border-gray-100 dark:border-white/10 py-4">
+              <div className="grid grid-cols-2 gap-y-4 border-y border-[rgba(243,214,182,0.25)] py-4">
                 {Object.entries(isCustomized ? customizedSpecs : product.specs).map(([label, value]) => (
                   <div key={label} className="flex flex-col">
-                    <span className="text-[8px] uppercase tracking-[0.1em] text-slate-400 mb-1">{label}</span>
-                    <span className="text-[10px] font-black uppercase">{value}</span>
+                    <span className="text-[8px] uppercase tracking-[0.1em] text-[#B99372] mb-1">{label}</span>
+                    <span className="text-[10px] font-black uppercase text-[#FFF3E4]">{value}</span>
                   </div>
                 ))}
               </div>
@@ -288,21 +283,21 @@ const ProductDetail = () => {
               <div className="flex gap-2">
                 <button
                   onClick={addToCart}
-                  className="flex-1 bg-[#facc15] text-black font-black py-3 rounded-xl uppercase tracking-[0.15em] text-[9px] hover:bg-black hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                  className="flex-1 bg-gradient-to-r from-[#D7A36F] to-[#F3D6B6] text-black font-black py-3 rounded-xl uppercase tracking-[0.15em] text-[9px] hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-lg cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-sm">shopping_cart</span>
                   Buy Now
                 </button>
                 <button
                   onClick={() => toast.success('Added to Wishlist!')}
-                  className="p-3 border border-gray-200 dark:border-white/10 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                  className="p-3 border border-[rgba(243,214,182,0.25)] rounded-xl hover:bg-[#7A5034] transition-colors text-[#E8C9A8]"
                 >
                   <span className="material-symbols-outlined text-sm">favorite</span>
                 </button>
               </div>
               <button
                 onClick={handleCustomize}
-                className="w-full bg-black dark:bg-white dark:text-black text-white font-black py-3 rounded-xl uppercase tracking-[0.15em] text-[9px] hover:opacity-80 transition-all border border-black dark:border-white"
+                className="w-full bg-[#5A3925] text-[#D7A36F] font-black py-3 rounded-xl uppercase tracking-[0.15em] text-[9px] hover:bg-[#6B442B] transition-all border border-[#D7A36F]"
               >
                 Customize with 3D Studio
               </button>
@@ -310,11 +305,11 @@ const ProductDetail = () => {
 
             <div className="mt-3 flex items-center gap-3 justify-center lg:justify-start opacity-60">
               <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-widest">
-                <span className="material-symbols-outlined !text-sm text-[#facc15]">verified</span>
+                <span className="material-symbols-outlined !text-sm text-[#D7A36F]">verified</span>
                 Lifetime Warranty
               </div>
               <div className="flex items-center gap-1 text-[8px] font-black uppercase tracking-widest">
-                <span className="material-symbols-outlined !text-sm text-[#facc15]">local_shipping</span>
+                <span className="material-symbols-outlined !text-sm text-[#D7A36F]">local_shipping</span>
                 Secure Delivery
               </div>
             </div>
@@ -323,13 +318,13 @@ const ProductDetail = () => {
       </main>
 
       {/* FOOTER */}
-      <footer className="py-6 border-t border-gray-100 dark:border-white/5 mt-8">
-        <div className="max-w-6xl mx-auto px-4 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-3 text-[8px] font-black uppercase tracking-[0.2em] text-slate-400">
+      <footer className="py-6 border-t border-[rgba(243,214,182,0.12)] mt-8">
+        <div className="max-w-6xl mx-auto px-4 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-3 text-[8px] font-black uppercase tracking-[0.2em] text-[#B99372]">
           <p>© 2026 SHIMORI FINE JEWELRY. ALL RIGHTS RESERVED.</p>
           <div className="flex gap-8">
-            <a className="hover:text-[#facc15] transition-colors" href="#">Privacy</a>
-            <a className="hover:text-[#facc15] transition-colors" href="#">Terms</a>
-            <a className="hover:text-[#facc15] transition-colors" href="#">Accessibility</a>
+            <a className="hover:text-[#D7A36F] transition-colors" href="#">Privacy</a>
+            <a className="hover:text-[#D7A36F] transition-colors" href="#">Terms</a>
+            <a className="hover:text-[#D7A36F] transition-colors" href="#">Accessibility</a>
           </div>
         </div>
       </footer>

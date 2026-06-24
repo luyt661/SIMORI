@@ -431,7 +431,7 @@ function Loader() {
   return (
     <mesh>
       <sphereGeometry args={[0.1]} />
-      <meshBasicMaterial color="#b08d26" />
+      <meshBasicMaterial color="#D7A36F" />
     </mesh>
   );
 }

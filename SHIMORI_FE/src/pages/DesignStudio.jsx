@@ -5,22 +5,22 @@ import toast, { Toaster } from 'react-hot-toast';
 import { modelGroups } from '../models';
 import JewelryViewer from '../components/JewelryViewer';
 
+
 const normalize = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
-// Giá bạc: fetch real-time từ Coinbase (XAG = silver, USD/troy oz)
-// Nhẫn bạc ~8g, markup 4x cho fine jewelry craftsmanship
+// Silver price: fetch real-time from Coinbase (XAG = silver, USD/troy oz)
+// Silver ring ~8g, 4x markup for fine jewelry craftsmanship
 const SILVER_RING_GRAMS = 8;
 const SILVER_MARKUP = 4;
 const TROY_OZ_TO_GRAMS = 31.1035;
-const SILVER_FALLBACK_OZ = 33.0; // fallback nếu API lỗi (USD/oz)
+const SILVER_FALLBACK_OZ = 33.0; // fallback if API fails (USD/oz)
 
-// Giá tĩnh — cập nhật định kỳ theo thị trường
+// Static prices — updated periodically per market
 const PRICES = {
   material: {
     'Titanium': 1_200,       // industrial titanium + craftsmanship
     'Titan': 1_200,
     'Stainless Steel': 550,  // stainless steel + craftsmanship
-    'Sắt không gỉ': 550
   },
   gemstone: {
     'Diamond': 10_800,
@@ -49,9 +49,7 @@ const BACKEND_IDS = {
     'Titanium': 1,
     'Titan': 1,
     'Silver': 3,
-    'Bạc': 3,
     'Stainless Steel': 1,
-    'Sắt không gỉ': 1,
   },
   gemstones: {
     'Diamond': 1,
@@ -128,16 +126,14 @@ const MATERIAL_CONFIGS = {
   'Titanium':      { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40, displayColor: 'from-[#374151] to-[#6b7280]' },
   'Titan':         { color: [0.20, 0.22, 0.27, 1], metallic: 1.0, roughness: 0.40, displayColor: 'from-[#374151] to-[#6b7280]' },
   'Silver':        { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05, displayColor: 'from-[#cbd5e1] to-[#f8fafc]' },
-  'Bạc':           { color: [0.85, 0.85, 0.87, 1], metallic: 1.0, roughness: 0.05, displayColor: 'from-[#cbd5e1] to-[#f8fafc]' },
   'Stainless Steel': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20, displayColor: 'from-[#52525b] to-[#a1a1aa]' },
-  'Sắt không gỉ': { color: [0.50, 0.50, 0.52, 1], metallic: 1.0, roughness: 0.20, displayColor: 'from-[#52525b] to-[#a1a1aa]' },
 };
 
 const LIGHTING_PRESETS = [
-  { id: 'studio', label: 'Luxury Studio', icon: 'wb_sunny', desc: 'Sắc nét, phản chiếu đỉnh cao' },
-  { id: 'sunset', label: 'Warm Sunset', icon: 'flare', desc: 'Ấm áp, phản chiếu hoàng hôn vàng' },
-  { id: 'warehouse', label: 'Daylight Showroom', icon: 'light_mode', desc: 'Ánh sáng ngoài trời chân thực' },
-  { id: 'dawn', label: 'Dawn Glow', icon: 'filter_drama', desc: 'Dịu nhẹ, thanh lịch buổi sớm' }
+  { id: 'studio', label: 'Luxury Studio', icon: 'wb_sunny', desc: 'Sharp, premium reflection' },
+  { id: 'sunset', label: 'Warm Sunset', icon: 'flare', desc: 'Warm, golden dusk glow' },
+  { id: 'warehouse', label: 'Daylight Showroom', icon: 'light_mode', desc: 'True outdoor daylight' },
+  { id: 'dawn', label: 'Dawn Glow', icon: 'filter_drama', desc: 'Soft, elegant morning light' }
 ];
 
 const fallbackSettings = [
@@ -151,10 +147,8 @@ const settings = modelGroups.settings.length
   ? modelGroups.settings.map((m) => ({ name: m.name, icon: 'diamond', url: m.url }))
   : fallbackSettings;
 
-const fallbackMaterials = Object.entries(MATERIAL_CONFIGS).map(([name, cfg]) => ({
-  name,
-  color: cfg.displayColor,
-}));
+const fallbackMaterials = Object.entries(MATERIAL_CONFIGS)
+  .map(([name, cfg]) => ({ name, color: cfg.displayColor }));
 const materials = modelGroups.materials.length
   ? modelGroups.materials.map((m) => ({ name: m.name, color: 'from-gray-200 to-gray-50', url: m.url }))
   : fallbackMaterials;
@@ -177,8 +171,8 @@ const bandStyles = modelGroups.bands.length ? modelGroups.bands.map((b) => b.nam
 const defaultSetting = settings[0]?.name || 'Prong';
 
 const SidebarSection = ({ title, children, step }) => (
-  <section className="mb-10 border-b border-gray-50 pb-8">
-    <label className="text-[11px] font-bold uppercase tracking-[0.15em] text-gray-400 mb-5 block">
+  <section className="mb-10 border-b border-[rgba(243,214,182,0.12)] pb-8">
+    <label className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#D7A36F] mb-5 block">
       {step}. {title}
     </label>
     {children}
@@ -187,8 +181,7 @@ const SidebarSection = ({ title, children, step }) => (
 
 const DesignStudio = () => {
   const navigate = useNavigate();
-  const hasInitialized = useRef(false); // Prevent double initialization
-  const [showPriceBreakdown, setShowPriceBreakdown] = useState(false);
+  const hasInitialized = useRef(false);
   const [showPreview, setShowPreview] = useState(false);
   const [gemSelected, setGemSelected] = useState(false);
   const [designId, setDesignId] = useState(null);
@@ -335,16 +328,17 @@ const DesignStudio = () => {
 
   const priceDetails = useMemo(() => {
     const widthMultiplier = config.width / 2.5;
-    const baseMatPrice = (config.material === 'Bạc' || config.material === 'Silver')
+    const normalizedMaterial = config.material === 'Bạc' ? 'Silver' : config.material;
+    const baseMatPrice = normalizedMaterial === 'Silver'
       ? silverMaterialPrice
-      : Math.round((PRICES.material[config.material] ?? 0) * widthMultiplier);
+      : Math.round((PRICES.material[normalizedMaterial] ?? 0) * widthMultiplier);
     
     // Scale Gemstone price by Carat weight linearly
     const gemstoneBasePrice = PRICES.gemstone[config.gemstone] ?? 0;
     const scaledGemPrice = Math.round(gemstoneBasePrice * (gemCarat / 2.0));
 
     const details = [
-      { label: 'Base Metal',    value: `${config.material} · ${config.width}mm`,  price: baseMatPrice,                                    isLive: (config.material === 'Bạc' || config.material === 'Silver') && priceSource === 'live' },
+      { label: 'Base Metal',    value: `${config.material} · ${config.width}mm`,  price: baseMatPrice,                                    isLive: (normalizedMaterial === 'Silver') && priceSource === 'live' },
       { label: 'Center Stone',  value: `${config.gemstone} · ${gemCarat.toFixed(1)} ct`, price: scaledGemPrice,                                 isLive: false },
       { label: 'Band Style',    value: config.bandStyle,                           price: PRICES.bandStyle[config.bandStyle] ?? 0,         isLive: false },
       { label: 'Craftsmanship', value: 'Handcrafted Artistry',                     price: PRICES.craftsmanship,                            isLive: false },
@@ -374,8 +368,8 @@ const DesignStudio = () => {
     const token = localStorage.getItem('token');
 
     if (!token) {
-      toast.error('Vui lòng đăng nhập để lưu thiết kế.', {
-        style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+      toast.error('Please log in to save your design.', {
+        style: { background: '#6A452D', color: '#FFF3E4', fontSize: '11px', fontWeight: 'bold' }
       });
       navigate('/login');
       return;
@@ -462,13 +456,13 @@ const DesignStudio = () => {
           window.history.replaceState({}, document.title, `/design?designId=${designIdParam}`);
           
           console.log('Loaded existing design:', designIdParam);
-          toast.success('Đã tiếp tục thiết kế thành công!', {
-            style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+          toast.success('Design resumed successfully!', {
+            style: { background: '#6A452D', color: '#FFF3E4', fontSize: '11px', fontWeight: 'bold' }
           });
         } catch (err) {
           console.error('Load design failed:', err);
-          toast.error('Không tải được thiết kế, tạo draft mới.', {
-            style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+          toast.error('Could not load design, creating new draft.', {
+            style: { background: '#6A452D', color: '#FFF3E4', fontSize: '11px', fontWeight: 'bold' }
           });
           // Do not create a new draft here. Continue must keep using the existing designId.
         }
@@ -496,8 +490,8 @@ const DesignStudio = () => {
         console.log('Draft created:', res.data.id);
       } catch (err) {
         console.error('Create draft failed:', err);
-        toast.error('Không tạo được bản nháp thiết kế.', {
-          style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+        toast.error('Could not create design draft.', {
+          style: { background: '#6A452D', color: '#FFF3E4', fontSize: '11px', fontWeight: 'bold' }
         });
       }
     };
@@ -575,19 +569,19 @@ const DesignStudio = () => {
     const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
     navigator.clipboard.writeText(shareUrl)
       .then(() => {
-        toast.success('Liên kết thiết kế của bạn đã được sao chép!', {
-          style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+        toast.success('Your design link has been copied!', {
+          style: { background: '#6A452D', color: '#FFF3E4', fontSize: '11px', fontWeight: 'bold' }
         });
       })
       .catch(() => {
-        toast.error('Không thể sao chép liên kết.');
+        toast.error('Could not copy link.');
       });
   };
 
   // Local storage collection handlers
   const saveToCollection = async () => {
     if (!designId) {
-      toast.error('Bản nháp chưa sẵn sàng, thử lại sau vài giây.');
+      toast.error('Draft not ready yet, please try again.');
       return;
     }
 
@@ -613,20 +607,20 @@ const DesignStudio = () => {
         engravingFont,
         lightingPreset,
         totalPrice,
-        date: new Date().toLocaleDateString('vi-VN'),
+        date: new Date().toLocaleDateString('en-US'),
       };
 
       const updated = [newDesign, ...savedDesigns.filter((d) => d.id !== designId)];
       setSavedDesigns(updated);
       localStorage.setItem('shimori_saved_designs', JSON.stringify(updated));
 
-      toast.success('Đã lưu thiết kế vào backend và Bộ sưu tập!', {
+      toast.success('Design saved to backend & collection!', {
         icon: '💎',
-        style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+        style: { background: '#6A452D', color: '#FFF3E4', fontSize: '11px', fontWeight: 'bold' }
       });
     } catch (err) {
       console.error('Save design failed:', err);
-      toast.error('Lưu thiết kế thất bại.');
+      toast.error('Failed to save design.');
     }
   };
 
@@ -634,7 +628,7 @@ const DesignStudio = () => {
     const updated = savedDesigns.filter((d) => d.id !== id);
     setSavedDesigns(updated);
     localStorage.setItem('shimori_saved_designs', JSON.stringify(updated));
-    toast.success('Đã xóa thiết kế.');
+    toast.success('Design deleted.');
   };
 
   const loadSavedDesign = (design) => {
@@ -648,7 +642,7 @@ const DesignStudio = () => {
     setDesignId(design.id); // Update designId so autosave patches this design
     setShowSavedModal(false);
     setAutoSaveStatus('idle');
-    toast.success('Đã tải thiết kế thành công!');
+    toast.success('Design loaded successfully!');
   };
 
   // Cart & Checkout handlers
@@ -667,7 +661,7 @@ const DesignStudio = () => {
     setCart(updated);
     localStorage.setItem('shimori_cart', JSON.stringify(updated));
     window.dispatchEvent(new Event('storage'));
-    toast.success('Đã thêm nhẫn vào Giỏ hàng!');
+    toast.success('Ring added to bag!');
     setCheckoutStep('cart');
     setShowCart(true);
   };
@@ -706,11 +700,11 @@ const DesignStudio = () => {
   const handleCheckoutSubmit = (e) => {
     e.preventDefault();
     if (!shippingInfo.email || !shippingInfo.name || !shippingInfo.address || !shippingInfo.card) {
-      toast.error('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+      toast.error('Please fill in all required fields.');
       return;
     }
     setCheckoutStep('success');
-    toast.success('Thanh toán thành công! Đơn hàng của bạn đang được chế tác.');
+    toast.success('Payment successful! Your order is now being crafted.');
   };
 
   const clearWholeCart = () => {
@@ -720,22 +714,22 @@ const DesignStudio = () => {
   };
 
   return (
-    <div className="min-h-dvh lg:h-dvh flex flex-col bg-white font-['Manrope'] overflow-x-hidden lg:overflow-hidden text-[#1a1a1a]">
+    <div className="min-h-dvh lg:h-dvh flex flex-col bg-[#5A3925] font-['Manrope'] overflow-x-hidden lg:overflow-hidden text-[#FFF3E4]">
       <Toaster position="bottom-right" reverseOrder={false} />
 
-      <header className="min-h-16 border-b border-gray-100 bg-white flex items-center justify-between gap-3 px-3 py-2 sm:px-5 lg:px-8 shrink-0 z-[130]">
+      <header className="min-h-16 border-b border-[rgba(243,214,182,0.15)] bg-[#6B442B] backdrop-blur flex items-center justify-between gap-3 px-3 py-2 sm:px-5 lg:px-8 shrink-0 z-[130]">
         <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/home')}>
-            <span className="material-symbols-outlined text-2xl">diamond</span>
-            <h2 className="text-xl font-extrabold tracking-tighter uppercase">SHIMORI</h2>
+          <div className="cursor-pointer" onClick={() => navigate('/home')}>
+            <span className="material-symbols-outlined text-2xl text-[#F3D6B6]">diamond</span>
+            <h2 className="text-xl font-extrabold tracking-tighter uppercase text-[#F3D6B6]">SHIMORI</h2>
           </div>
           {autoSaveStatus !== 'idle' && (
             <div className={`hidden sm:flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full transition-all ${
               autoSaveStatus === 'saving' 
-                ? 'bg-yellow-50 text-yellow-700' 
-                : 'bg-green-50 text-green-700'
+                ? 'bg-[#7A5034] text-[#D7A36F]' 
+                : 'bg-[#1a3a1a] text-[#4caf50]'
             }`}>
-              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${autoSaveStatus === 'saving' ? 'bg-yellow-600' : 'bg-green-600'}`}></span>
+              <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${autoSaveStatus === 'saving' ? 'bg-[#D7A36F]' : 'bg-[#4caf50]'}`}></span>
               {autoSaveStatus === 'saving' ? 'Saving...' : 'Saved!'}
             </div>
           )}
@@ -743,7 +737,7 @@ const DesignStudio = () => {
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-3 lg:gap-6">
           <button 
             onClick={copyShareLink}
-            className="hidden sm:flex items-center gap-1.5 border border-gray-200 px-3 lg:px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider hover:bg-gray-50 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 border border-[rgba(243,214,182,0.25)] px-3 lg:px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider text-[#F3D6B6] hover:bg-[#7A5034] transition-colors"
           >
             <span className="material-symbols-outlined text-sm">share</span>
             <span className="hidden lg:inline">Share Link</span>
@@ -751,23 +745,23 @@ const DesignStudio = () => {
           
           <button 
             onClick={() => setShowSavedModal(true)}
-            className="hidden md:flex items-center gap-1.5 border border-gray-200 px-3 lg:px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider hover:bg-gray-50 transition-colors relative"
+            className="hidden md:flex items-center gap-1.5 border border-[rgba(243,214,182,0.25)] px-3 lg:px-4 py-2 rounded text-[9px] font-black uppercase tracking-wider text-[#F3D6B6] hover:bg-[#7A5034] transition-colors relative"
           >
             <span className="material-symbols-outlined text-sm">favorite</span>
             <span className="hidden lg:inline">Collection</span>
             {savedDesigns.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#b08d26] text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{savedDesigns.length}</span>
+              <span className="absolute -top-1.5 -right-1.5 bg-[#D7A36F] text-[#1a0f06] text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{savedDesigns.length}</span>
             )}
           </button>
 
           <button 
             onClick={() => { setCheckoutStep('cart'); setShowCart(true); }}
-            className="bg-black text-white h-10 px-3 lg:px-5 rounded text-[9px] font-black uppercase tracking-widest hover:bg-[#b08d26] transition-colors flex items-center gap-2 relative"
+            className="bg-[#D7A36F] text-[#1a0f06] h-10 px-3 lg:px-5 rounded text-[9px] font-black uppercase tracking-widest hover:bg-[#B87948] transition-colors flex items-center gap-2 relative"
           >
             <span className="material-symbols-outlined text-sm">shopping_bag</span>
             <span className="hidden sm:inline">Bag</span>
             {cart.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-[#facc15] text-black text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>
+              <span className="absolute -top-1.5 -right-1.5 bg-[#D7A36F] text-[#1a0f06] text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{cart.length}</span>
             )}
           </button>
 
@@ -776,8 +770,8 @@ const DesignStudio = () => {
               localStorage.removeItem('token');
               localStorage.removeItem('shimori_cart');
               localStorage.removeItem('shimori_saved_designs');
-              toast.success('Đã đăng xuất!', {
-                style: { background: '#1a1a1a', color: '#fff', fontSize: '11px', fontWeight: 'bold' }
+              toast.success('Logged out!', {
+                style: { background: '#6A452D', color: '#FFF3E4', fontSize: '11px', fontWeight: 'bold' }
               });
               navigate('/login');
             }}
@@ -790,40 +784,40 @@ const DesignStudio = () => {
       </header>
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden min-h-0 pb-36 lg:pb-24">
-        <aside className="order-2 lg:order-1 w-full lg:w-[400px] border-t lg:border-t-0 lg:border-r border-gray-100 bg-white overflow-visible lg:overflow-y-auto no-scrollbar p-4 sm:p-6 lg:p-8 shrink-0 h-auto lg:h-full">
+        <aside className="order-2 lg:order-1 w-full lg:w-[400px] border-t lg:border-t-0 lg:border-r border-[rgba(243,214,182,0.15)] bg-[#6A452D] overflow-visible lg:overflow-y-auto no-scrollbar p-4 sm:p-6 lg:p-8 shrink-0 h-auto lg:h-full">
           <div className="mb-8">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#b08d26] mb-1.5">Design Name</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#D7A36F] mb-1.5">Design Name</h2>
             <div className="relative group/name max-w-xs">
               <input
                 type="text"
                 value={designName}
                 onChange={(e) => setDesignName(e.target.value)}
                 placeholder="Name your design..."
-                className="w-full bg-gray-50 hover:bg-gray-100/70 border border-gray-100 rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#b08d26] focus:bg-white font-black uppercase tracking-wider text-gray-800 placeholder:text-gray-400 placeholder:font-bold transition-all"
+                className="w-full bg-[#7A5034] hover:bg-[#7C5438]/70 border border-[rgba(243,214,182,0.15)] rounded-xl px-4 py-2.5 text-xs outline-none focus:border-[#D7A36F] focus:bg-[#7C5438] font-black uppercase tracking-wider text-[#FFF3E4] placeholder:text-[#B99372] placeholder:font-bold transition-all"
               />
-              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/name:text-[#b08d26] text-sm pointer-events-none transition-colors">edit</span>
+              <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-[#B99372] group-focus-within/name:text-[#D7A36F] text-sm pointer-events-none transition-colors">edit</span>
             </div>
           </div>
 
-          <div className="bg-gray-50/80 rounded-xl border border-gray-100 p-6 mb-10">
-            <div className="flex items-center gap-2 mb-6 text-[#b08d26]">
+          <div className="bg-[#7A5034]/80 rounded-xl border border-[rgba(243,214,182,0.15)] p-6 mb-10">
+            <div className="flex items-center gap-2 mb-6 text-[#D7A36F]">
               <span className="material-symbols-outlined text-base">description</span>
               <span className="text-[10px] font-black uppercase tracking-widest">Design Summary</span>
             </div>
             <div className="grid grid-cols-2 gap-y-5 gap-x-4">
               {Object.entries(config).map(([key, val]) => (
-                <div key={key} className="border-l-2 border-gray-200 pl-3">
-                  <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">{key}</p>
-                  <p className="text-[10px] font-black uppercase">{val} {key === 'width' ? 'mm' : ''}</p>
+                <div key={key} className="border-l-2 border-[rgba(243,214,182,0.15)] pl-3">
+                  <p className="text-[8px] font-bold text-[#B99372] uppercase mb-1">{key}</p>
+                  <p className="text-[10px] font-black uppercase text-[#FFF3E4]">{val} {key === 'width' ? 'mm' : ''}</p>
                 </div>
               ))}
-              <div className="border-l-2 border-gray-200 pl-3">
-                <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Carat Weight</p>
-                <p className="text-[10px] font-black uppercase">{gemCarat.toFixed(1)} ct</p>
+              <div className="border-l-2 border-[rgba(243,214,182,0.15)] pl-3">
+                <p className="text-[8px] font-bold text-[#B99372] uppercase mb-1">Carat Weight</p>
+                <p className="text-[10px] font-black uppercase text-[#FFF3E4]">{gemCarat.toFixed(1)} ct</p>
               </div>
               {engraving && (
-                <div className="border-l-2 border-gray-200 pl-3 col-span-2">
-                  <p className="text-[8px] font-bold text-gray-400 uppercase mb-1">Engraving</p>
+                <div className="border-l-2 border-[rgba(243,214,182,0.15)] pl-3 col-span-2">
+                  <p className="text-[8px] font-bold text-[#B99372] uppercase mb-1">Engraving</p>
                   <p className="text-[10px] font-black uppercase truncate font-serif italic text-amber-800">"{engraving}" ({engravingFont})</p>
                 </div>
               )}
@@ -836,11 +830,11 @@ const DesignStudio = () => {
                 <button key={s.name} onClick={() => { setConfig({...config, setting: s.name}); setShowPreview(true); }}
                   className={`flex flex-col items-center justify-center p-4 rounded-xl transition-all duration-200 ${
                     config.setting === s.name
-                      ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20 scale-[1.03]'
-                      : 'border border-gray-100 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-2 border-[#D7A36F] bg-[#D7A36F]/12 shadow-md shadow-[#D7A36F]/20 scale-[1.03]'
+                      : 'border border-[rgba(243,214,182,0.15)] hover:border-[rgba(243,214,182,0.3)] hover:bg-[#7A5034]'
                   }`}>
-                  <span className={`material-symbols-outlined text-2xl mb-2 transition-colors ${config.setting === s.name ? 'text-[#b08d26]' : 'text-gray-300'}`}>{s.icon}</span>
-                  <span className={`text-[9px] font-black uppercase tracking-widest ${config.setting === s.name ? 'text-[#b08d26]' : 'text-gray-400'}`}>{s.name}</span>
+                  <span className={`material-symbols-outlined text-2xl mb-2 transition-colors ${config.setting === s.name ? 'text-[#D7A36F]' : 'text-[#B99372]'}`}>{s.icon}</span>
+                  <span className={`text-[9px] font-black uppercase tracking-widest ${config.setting === s.name ? 'text-[#D7A36F]' : 'text-[#B99372]'}`}>{s.name}</span>
                 </button>
               ))}
             </div>
@@ -852,16 +846,16 @@ const DesignStudio = () => {
                 <button key={m.name} onClick={() => { setConfig({...config, material: m.name}); setShowPreview(true); }}
                   className={`w-full flex items-center justify-between p-4 rounded-xl transition-all duration-200 ${
                     config.material === m.name
-                      ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20'
-                      : 'border border-gray-100 hover:border-gray-300 hover:bg-gray-50'
+                      ? 'border-2 border-[#D7A36F] bg-[#D7A36F]/12 shadow-md shadow-[#D7A36F]/20'
+                      : 'border border-[rgba(243,214,182,0.15)] hover:border-[rgba(243,214,182,0.3)] hover:bg-[#7A5034]'
                   }`}>
                   <div className="flex items-center gap-3">
                     <div className={`w-6 h-6 rounded-full bg-gradient-to-tr ${m.color} shadow-sm`}></div>
-                    <span className={`text-[10px] font-black uppercase tracking-wide ${config.material === m.name ? 'text-[#b08d26]' : 'text-gray-700'}`}>{m.name}</span>
+                    <span className={`text-[10px] font-black uppercase tracking-wide ${config.material === m.name ? 'text-[#D7A36F]' : 'text-[#E8C9A8]'}`}>{m.name}</span>
                   </div>
                   {config.material === m.name
-                    ? <span className="material-symbols-outlined text-[#b08d26] text-lg">check_circle</span>
-                    : <span className="material-symbols-outlined text-gray-200 text-lg">radio_button_unchecked</span>
+                    ? <span className="material-symbols-outlined text-[#D7A36F] text-lg">check_circle</span>
+                    : <span className="material-symbols-outlined text-[rgba(243,214,182,0.15)] text-lg">radio_button_unchecked</span>
                   }
                 </button>
               ))}
@@ -874,11 +868,11 @@ const DesignStudio = () => {
                 <button key={g.name} onClick={() => { setConfig({...config, gemstone: g.name}); setGemSelected(true); setShowPreview(true); }}
                   className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all duration-200 ${
                     config.gemstone === g.name
-                      ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20 scale-[1.05]'
-                      : 'border-2 border-transparent hover:border-gray-200 hover:bg-gray-50'
+                      ? 'border-2 border-[#D7A36F] bg-[#D7A36F]/12 shadow-md shadow-[#D7A36F]/20 scale-[1.05]'
+                      : 'border-2 border-transparent hover:border-[rgba(243,214,182,0.3)] hover:bg-[#7A5034]'
                   }`}>
-                  <div className={`w-12 h-12 rounded-full ${g.color || 'bg-gray-200'} shadow-sm border border-gray-100`} />
-                  <span className={`text-[8px] font-black uppercase tracking-widest ${config.gemstone === g.name ? 'text-[#b08d26]' : 'text-gray-400'}`}>{g.label}</span>
+                  <div className={`w-12 h-12 rounded-full ${g.color || 'bg-gray-200'} shadow-sm border border-[rgba(243,214,182,0.15)]`} />
+                  <span className={`text-[8px] font-black uppercase tracking-widest ${config.gemstone === g.name ? 'text-[#D7A36F]' : 'text-[#B99372]'}`}>{g.label}</span>
                 </button>
               ))}
             </div>
@@ -890,8 +884,8 @@ const DesignStudio = () => {
                 <button key={style} onClick={() => { setConfig({...config, bandStyle: style}); setShowPreview(true); }}
                   className={`py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all duration-200 ${
                     config.bandStyle === style
-                      ? 'border-2 border-[#b08d26] text-[#b08d26] bg-[#b08d26]/12 shadow-md shadow-[#b08d26]/20'
-                      : 'border border-gray-100 text-gray-400 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-600'
+                      ? 'border-2 border-[#D7A36F] text-[#D7A36F] bg-[#D7A36F]/12 shadow-md shadow-[#D7A36F]/20'
+                      : 'border border-[rgba(243,214,182,0.15)] text-[#B99372] hover:border-[rgba(243,214,182,0.3)] hover:bg-[#7A5034] hover:text-[#E8C9A8]'
                   }`}>
                   {style}
                 </button>
@@ -901,8 +895,8 @@ const DesignStudio = () => {
 
           <SidebarSection step="05" title="Band Width">
             <div className="flex justify-between items-center mb-6 text-[10px] font-bold tracking-widest uppercase">
-              <span className="text-gray-400">Width</span>
-              <span className="text-[#b08d26]">{config.width} mm</span>
+              <span className="text-[#B99372]">Width</span>
+              <span className="text-[#D7A36F]">{config.width} mm</span>
             </div>
             <input
               type="range"
@@ -911,14 +905,14 @@ const DesignStudio = () => {
               step="0.1"
               value={config.width}
               onChange={(e) => setConfig({ ...config, width: parseFloat(e.target.value) })}
-              className="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#b08d26]"
+              className="w-full h-1 bg-[#7A5034] rounded-lg appearance-none cursor-pointer accent-[#D7A36F]"
             />
           </SidebarSection>
 
           <SidebarSection step="06" title="Gemstone Carats (Size)">
             <div className="flex justify-between items-center mb-6 text-[10px] font-bold tracking-widest uppercase">
-              <span className="text-gray-400">Carats</span>
-              <span className="text-[#b08d26]">{gemCarat.toFixed(1)} ct</span>
+              <span className="text-[#B99372]">Carats</span>
+              <span className="text-[#D7A36F]">{gemCarat.toFixed(1)} ct</span>
             </div>
             <input
               type="range"
@@ -927,7 +921,7 @@ const DesignStudio = () => {
               step="0.1"
               value={gemCarat}
               onChange={(e) => setGemCarat(parseFloat(e.target.value))}
-              className="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-[#b08d26]"
+              className="w-full h-1 bg-[#7A5034] rounded-lg appearance-none cursor-pointer accent-[#D7A36F]"
             />
           </SidebarSection>
 
@@ -939,14 +933,14 @@ const DesignStudio = () => {
                 maxLength="30"
                 value={engravingInput}
                 onChange={(e) => setEngravingInput(e.target.value.toUpperCase())}
-                className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-xs focus:ring-1 focus:ring-[#b08d26] outline-none font-bold uppercase tracking-wider text-gray-800 placeholder:text-gray-400"
+                className="flex-1 bg-[#7A5034] border border-[rgba(243,214,182,0.15)] rounded-xl px-4 py-3 text-xs focus:ring-1 focus:ring-[#D7A36F] outline-none font-bold uppercase tracking-wider text-[#FFF3E4] placeholder:text-[#B99372]"
               />
               <button
                 onClick={() => {
                   setEngraving(engravingInput);
                   toast.success('Engraving applied!');
                 }}
-                className={`p-3 rounded-xl border transition-all flex items-center justify-center ${engravingInput !== engraving ? 'bg-[#b08d26] text-white border-[#b08d26] hover:bg-[#b08d26]/90 shadow-sm' : 'bg-gray-50 text-gray-400 border-gray-100'}`}
+                className={`p-3 rounded-xl border transition-all flex items-center justify-center ${engravingInput !== engraving ? 'bg-[#D7A36F] text-[#1a0f06] border-[#D7A36F] hover:bg-[#D7A36F]/90 shadow-sm' : 'bg-[#7A5034] text-[#B99372] border-[rgba(243,214,182,0.15)]'}`}
                 title="Engrave Ring"
               >
                 <span className="material-symbols-outlined text-lg">publish</span>
@@ -958,7 +952,7 @@ const DesignStudio = () => {
                   <button 
                     key={font}
                     onClick={() => setEngravingFont(font)}
-                    className={`flex-1 py-2 text-[8px] font-black uppercase rounded-lg border transition-all ${engravingFont === font ? 'border-[#b08d26] text-[#b08d26] bg-[#b08d26]/5' : 'border-gray-100 text-gray-400'}`}
+                    className={`flex-1 py-2 text-[8px] font-black uppercase rounded-lg border transition-all ${engravingFont === font ? 'border-[#D7A36F] text-[#D7A36F] bg-[#D7A36F]/5' : 'border-[rgba(243,214,182,0.15)] text-[#B99372]'}`}
                   >
                     {font}
                   </button>
@@ -973,11 +967,11 @@ const DesignStudio = () => {
                 <button key={p.id} onClick={() => setLightingPreset(p.id)}
                   className={`flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 ${
                     lightingPreset === p.id
-                      ? 'border-2 border-[#b08d26] bg-[#b08d26]/12 shadow-sm scale-[1.02]'
-                      : 'border border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                      ? 'border-2 border-[#D7A36F] bg-[#D7A36F]/12 shadow-sm scale-[1.02]'
+                      : 'border border-[rgba(243,214,182,0.15)] hover:border-[rgba(243,214,182,0.3)] hover:bg-[#7A5034]'
                   }`}>
-                  <span className={`material-symbols-outlined text-lg mb-1 ${lightingPreset === p.id ? 'text-[#b08d26]' : 'text-gray-300'}`}>{p.icon}</span>
-                  <span className={`text-[8px] font-black uppercase tracking-wider ${lightingPreset === p.id ? 'text-[#b08d26]' : 'text-gray-500'}`}>{p.label}</span>
+                  <span className={`material-symbols-outlined text-lg mb-1 ${lightingPreset === p.id ? 'text-[#D7A36F]' : 'text-[#B99372]'}`}>{p.icon}</span>
+                  <span className={`text-[8px] font-black uppercase tracking-wider ${lightingPreset === p.id ? 'text-[#D7A36F]' : 'text-[#B99372]'}`}>{p.label}</span>
                 </button>
               ))}
             </div>
@@ -986,11 +980,11 @@ const DesignStudio = () => {
           <div className="h-6 lg:h-40"></div>
         </aside>
 
-        <main className="order-1 lg:order-2 w-full flex-none lg:flex-1 bg-[#fcfcfc] overflow-visible lg:overflow-y-auto no-scrollbar relative flex flex-col h-auto lg:h-full">
+        <main className="order-1 lg:order-2 w-full flex-none lg:flex-1 bg-[#5A3925] overflow-visible lg:overflow-y-auto no-scrollbar relative flex flex-col h-auto lg:h-full">
           <div className="sticky top-3 lg:top-8 flex justify-center z-20 pointer-events-none shrink-0 px-3">
-            <div className="bg-white/90 backdrop-blur px-5 py-2 rounded-full border border-gray-100 shadow-sm flex items-center gap-3">
+            <div className="bg-[#6B442B]/90 backdrop-blur px-5 py-2 rounded-full border border-[rgba(243,214,182,0.15)] shadow-sm flex items-center gap-3">
                <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-               <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-widest text-center">
+               <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wide sm:tracking-widest text-[#E8C9A8] text-center">
                  Render: Ultra-High
                  <span className="hidden sm:inline"> (Physical refraction)</span>
                </span>
@@ -1011,38 +1005,38 @@ const DesignStudio = () => {
                 />
               </div>
               <div className="mt-2 sm:mt-6 lg:mt-8 flex flex-col items-center gap-2">
-                <div className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center border border-gray-100 cursor-pointer">
-                  <span className="material-symbols-outlined text-[#b08d26]">open_with</span>
+                <div className="w-10 h-10 rounded-full bg-[#6A452D] shadow-md flex items-center justify-center border border-[rgba(243,214,182,0.15)] cursor-pointer">
+                  <span className="material-symbols-outlined text-[#D7A36F]">open_with</span>
                 </div>
-                <span className="text-[9px] font-black text-[#b08d26] uppercase">Explore 360°</span>
+                <span className="text-[9px] font-black text-[#D7A36F] uppercase">Explore 360°</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white border-t border-gray-100 px-4 sm:px-6 lg:px-10 py-5 lg:py-8 flex gap-4 lg:gap-8 shrink-0 overflow-x-auto no-scrollbar">
-            <div className="hidden sm:flex shrink-0 border-r border-gray-100 pr-6 lg:pr-8 flex-col justify-center">
-               <p className="text-[9px] font-black text-[#b08d26] uppercase tracking-widest mb-1">Quick Presets</p>
-               <p className="text-[8px] text-gray-400 font-bold uppercase tracking-tight">Faster Switching</p>
+          <div className="bg-[#6A452D] border-t border-[rgba(243,214,182,0.15)] px-4 sm:px-6 lg:px-10 py-5 lg:py-8 flex gap-4 lg:gap-8 shrink-0 overflow-x-auto no-scrollbar">
+            <div className="hidden sm:flex shrink-0 border-r border-[rgba(243,214,182,0.15)] pr-6 lg:pr-8 flex-col justify-center">
+               <p className="text-[9px] font-black text-[#D7A36F] uppercase tracking-widest mb-1">Quick Presets</p>
+               <p className="text-[8px] text-[#B99372] font-bold uppercase tracking-tight">Faster Switching</p>
             </div>
             <div className="flex gap-4">
               {gemstones.map((gem) => (
                 <button key={gem.name} onClick={() => setConfig({...config, gemstone: gem.name})}
-                  className={`flex flex-col items-center min-w-[110px] sm:min-w-[150px] p-3 sm:p-5 rounded-xl border transition-all ${config.gemstone === gem.name ? 'border-[#b08d26] bg-gray-50' : 'border-transparent hover:bg-gray-50'}`}>
-                  <div className={`w-4 h-4 rotate-45 ${gem.color} border border-gray-200 mb-3`}></div>
-                  <span className="text-[9px] font-black uppercase tracking-tighter text-center">{gem.label} {gem.name}</span>
+                  className={`flex flex-col items-center min-w-[110px] sm:min-w-[150px] p-3 sm:p-5 rounded-xl border transition-all ${config.gemstone === gem.name ? 'border-[#D7A36F] bg-[#7A5034]' : 'border-transparent hover:bg-[#7A5034]'}`}>
+                  <div className={`w-4 h-4 rotate-45 ${gem.color} border border-[rgba(243,214,182,0.15)] mb-3`}></div>
+                  <span className="text-[9px] font-black uppercase tracking-tighter text-[#E8C9A8] text-center">{gem.label} {gem.name}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="hidden lg:flex bg-white border-t border-gray-50 py-5 px-10 items-center justify-between text-[9px] font-bold text-gray-400 uppercase tracking-widest shrink-0">
+          <div className="hidden lg:flex bg-[#6B442B] border-t border-[rgba(243,214,182,0.12)] py-5 px-10 items-center justify-between text-[9px] font-bold text-[#B99372] uppercase tracking-widest shrink-0">
             <div className="flex gap-8">
               <span className="flex items-center gap-2 text-[#00c853] font-black"><div className="w-1.5 h-1.5 rounded-full bg-[#00c853]"></div> Engine Active</span>
               <span>Metal Density: 21.45 g/cm³</span>
               <span>Refractive Index: {config.gemstone === 'Diamond' ? '2.417' : '1.760'}</span>
             </div>
             <div className="flex gap-6">
-              <span className="text-black font-black">Design ID: {designId ? `#${designId}` : 'Creating...'}</span>
+              <span className="text-[#FFF3E4] font-black">Design ID: {designId ? `#${designId}` : 'Creating...'}</span>
               <span>© 2026 Unified 3D Studio</span>
             </div>
           </div>
@@ -1050,63 +1044,13 @@ const DesignStudio = () => {
         </main>
       </div>
 
-      {/* PRICE BREAKDOWN BAR & BUY ACTION */}
+      {/* BUY ACTION */}
       <div className="fixed bottom-0 left-0 right-0 z-[120] pointer-events-none">
-        <div
-          className={`pointer-events-auto max-h-[60dvh] overflow-y-auto bg-white/95 backdrop-blur-xl border-t border-gray-100 px-4 py-5 sm:px-6 lg:px-12 lg:py-12 transition-all duration-500 transform shadow-[0_-30px_60px_rgba(0,0,0,0.12)] ${showPriceBreakdown ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0 pointer-events-none'}`}
-          onMouseEnter={() => setShowPriceBreakdown(true)}
-          onMouseLeave={() => setShowPriceBreakdown(false)}
-        >
-          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-16">
-            {priceDetails.map((item, idx) => (
-              <div key={idx}>
-                <div className="flex items-center gap-2 mb-4">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.label}</p>
-                  {item.isLive && (
-                    <span className="text-[8px] font-black uppercase tracking-wider text-green-600 bg-green-50 px-1.5 py-0.5 rounded flex items-center gap-1">
-                      <span className="w-1 h-1 rounded-full bg-green-500 animate-pulse inline-block"></span>Live
-                    </span>
-                  )}
-                  {!item.isLive && item.label !== 'Craftsmanship' && (
-                    <span className="text-[8px] font-black uppercase tracking-wider text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">Est.</span>
-                  )}
-                </div>
-                <div className="flex justify-between items-end border-b-2 border-gray-100 pb-4">
-                  <span className="text-[12px] font-black uppercase text-gray-800 tracking-tight truncate max-w-[150px]">{item.value}</span>
-                  <span className="text-[14px] font-black text-[#b08d26]">
-                    {item.price == null ? '...' : `$${item.price.toLocaleString()}`}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="pointer-events-auto flex items-center justify-between gap-3 bg-white border-t border-gray-100 px-3 py-3 sm:px-6 lg:px-12 lg:h-24 relative shadow-lg safe-bottom">
-          <div className="flex min-w-0 items-center justify-between gap-3 lg:gap-16">
-            <div className="flex flex-col">
-              <button
-                type="button"
-                onClick={() => setShowPriceBreakdown((current) => !current)}
-                className="text-[9px] font-black uppercase text-gray-400 mb-1 flex items-center gap-2"
-                aria-expanded={showPriceBreakdown}
-              >
-                Total
-                <span className="material-symbols-outlined text-[14px] text-[#b08d26]">
-                  {showPriceBreakdown ? 'expand_more' : 'info'}
-                </span>
-              </button>
-              <div className="flex items-baseline gap-4">
-                <h3 className="text-2xl font-black tracking-tighter text-black">
-                  {priceSource === 'loading' ? '...' : `$${totalPrice.toLocaleString()}`}
-                </h3>
-                <span className="hidden sm:inline text-[8px] text-green-600 font-black bg-green-50 px-2 py-1 rounded uppercase tracking-wider">In Stock</span>
-              </div>
-            </div>
-
+        <div className="pointer-events-auto flex items-center justify-between gap-3 bg-[#6B442B] border-t border-[rgba(243,214,182,0.15)] px-3 py-3 sm:px-6 lg:px-12 lg:h-24 relative shadow-lg safe-bottom">
+          <div className="flex items-center gap-3">
             <button 
               onClick={saveToCollection}
-              className="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#b08d26] border-b-2 border-[#b08d26] hover:text-black hover:border-black transition-all"
+              className="hidden sm:flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#D7A36F] border-b-2 border-[#D7A36F] hover:text-[#FFF3E4] hover:border-[#FFF3E4] transition-all"
             >
               <span className="material-symbols-outlined text-sm">favorite</span> Save to Collection
             </button>
@@ -1115,19 +1059,17 @@ const DesignStudio = () => {
           <div className="grid shrink-0 grid-cols-2 gap-2 sm:gap-4 lg:flex">
             <button
               onClick={addItemToCart}
-              className="bg-black text-white px-3 sm:px-6 lg:px-8 py-3 lg:py-4 rounded-xl font-black uppercase text-[8px] sm:text-[10px] tracking-wider lg:tracking-[0.3em] hover:bg-[#b08d26] transition-all"
+              className="bg-[#6A452D] text-[#FFF3E4] border border-[rgba(243,214,182,0.25)] px-3 sm:px-6 lg:px-8 py-3 lg:py-4 rounded-xl font-black uppercase text-[8px] sm:text-[10px] tracking-wider lg:tracking-[0.3em] hover:bg-[#D7A36F] hover:text-[#1a0f06] transition-all"
             >
               Add To Bag
             </button>
 
             <button
-              onMouseEnter={() => setShowPriceBreakdown(true)}
-              onMouseLeave={() => setShowPriceBreakdown(false)}
               onClick={proceedToProductDetail}
-              className="bg-[#b08d26] text-white px-3 sm:px-6 lg:px-10 py-3 lg:py-4 rounded-xl font-black uppercase text-[8px] sm:text-[10px] tracking-wider lg:tracking-[0.3em] flex items-center justify-center gap-2 lg:gap-4 hover:bg-black transition-all shadow-lg shadow-[#b08d26]/10"
+              className="bg-[#D7A36F] text-[#1a0f06] px-3 sm:px-6 lg:px-10 py-3 lg:py-4 rounded-xl font-black uppercase text-[8px] sm:text-[10px] tracking-wider lg:tracking-[0.3em] flex items-center justify-center gap-2 lg:gap-4 hover:bg-[#B87948] transition-all shadow-lg shadow-[#D7A36F]/10"
             >
-              <span className="sm:hidden">Đặt Hàng</span>
-              <span className="hidden sm:inline">Xem Chi Tiết & Đặt Hàng</span>
+              <span className="sm:hidden">Buy Now</span>
+              <span className="hidden sm:inline">Detail</span>
               <span className="material-symbols-outlined text-sm lg:text-base">
                 arrow_forward
               </span>
@@ -1139,49 +1081,46 @@ const DesignStudio = () => {
       {/* MODAL: SAVED COLLECTIONS */}
       {showSavedModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-3 sm:p-6 animate-fadeIn">
-          <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
-            <header className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+          <div className="bg-[#6A452D] rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
+            <header className="px-4 sm:px-8 py-4 sm:py-6 border-b border-[rgba(243,214,182,0.15)] flex items-center justify-between shrink-0">
               <div>
-                <span className="text-[10px] font-black text-[#b08d26] uppercase tracking-widest">Personal Vault</span>
-                <h3 className="text-xl font-black uppercase">My Saved Designs</h3>
+                <span className="text-[10px] font-black text-[#D7A36F] uppercase tracking-widest">Personal Vault</span>
+                <h3 className="text-xl font-black uppercase text-[#FFF3E4]">My Saved Designs</h3>
               </div>
-              <button onClick={() => setShowSavedModal(false)} className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+              <button onClick={() => setShowSavedModal(false)} className="w-10 h-10 rounded-full hover:bg-[#7A5034] flex items-center justify-center transition-colors text-[#E8C9A8]">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </header>
 
-            <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-gray-50/50">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#7A5034]/50">
               {savedDesigns.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <span className="material-symbols-outlined text-5xl text-gray-300 mb-4">favorite_border</span>
-                  <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">No Saved Designs Yet</p>
-                  <p className="text-xs text-gray-400 mt-2 max-w-xs leading-relaxed">Save your custom creation from the customizer footer to easily reload or compare them later.</p>
+                  <span className="material-symbols-outlined text-5xl text-[#B99372] mb-4">favorite_border</span>
+                  <p className="text-sm font-bold text-[#B99372] uppercase tracking-wider">No Saved Designs Yet</p>
+                  <p className="text-xs text-[#B99372] mt-2 max-w-xs leading-relaxed">Save your custom creation from the customizer footer to easily reload or compare them later.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {savedDesigns.map((d) => (
-                    <div key={d.id} className="bg-white p-4 sm:p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between group hover:border-[#b08d26] transition-all">
+                    <div key={d.id} className="bg-[#7A5034] p-4 sm:p-6 rounded-2xl border border-[rgba(243,214,182,0.15)] shadow-sm flex flex-col justify-between group hover:border-[#D7A36F] transition-all">
                       <div>
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">{d.date}</span>
-                            <h4 className="text-sm font-black uppercase mt-1">Bespoke Ring #{d.id.toString().slice(-4)}</h4>
-                          </div>
-                          <span className="text-sm font-black text-[#b08d26]">${d.totalPrice.toLocaleString()}</span>
+                        <div className="mb-4">
+                          <span className="text-[8px] font-black text-[#B99372] uppercase tracking-widest">{d.date}</span>
+                          <h4 className="text-sm font-black uppercase text-[#FFF3E4] mt-1">Bespoke Ring #{d.id.toString().slice(-4)}</h4>
                         </div>
-                        <div className="grid grid-cols-2 gap-y-3 gap-x-2 bg-gray-50/70 p-4 rounded-xl mb-6 text-[9px] uppercase font-bold text-gray-500">
-                          <div>Setting: <span className="text-black font-black">{d.config.setting}</span></div>
-                          <div>Metal: <span className="text-black font-black">{d.config.material}</span></div>
-                          <div>Gemstone: <span className="text-black font-black">{d.config.gemstone}</span></div>
-                          <div>Width: <span className="text-black font-black">{d.config.width}mm</span></div>
-                          <div>Carat: <span className="text-black font-black">{d.gemCarat.toFixed(1)}ct</span></div>
+                        <div className="grid grid-cols-2 gap-y-3 gap-x-2 bg-[#6A452D]/70 p-4 rounded-xl mb-6 text-[9px] uppercase font-bold text-[#B99372]">
+                          <div>Setting: <span className="text-[#FFF3E4] font-black">{d.config.setting}</span></div>
+                          <div>Metal: <span className="text-[#FFF3E4] font-black">{d.config.material}</span></div>
+                          <div>Gemstone: <span className="text-[#FFF3E4] font-black">{d.config.gemstone}</span></div>
+                          <div>Width: <span className="text-[#FFF3E4] font-black">{d.config.width}mm</span></div>
+                          <div>Carat: <span className="text-[#FFF3E4] font-black">{d.gemCarat.toFixed(1)}ct</span></div>
                           {d.engraving && <div className="col-span-2 truncate">Text: <span className="text-amber-800 font-serif italic">"{d.engraving}"</span></div>}
                         </div>
                       </div>
                       <div className="flex gap-3">
                         <button 
                           onClick={() => loadSavedDesign(d)}
-                          className="flex-1 bg-black text-white hover:bg-[#b08d26] py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
+                          className="flex-1 bg-[#D7A36F] text-[#1a0f06] hover:bg-[#B87948] py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors"
                         >
                           Load Design
                         </button>
@@ -1202,46 +1141,45 @@ const DesignStudio = () => {
       )}
 
       {/* DRAWER: LUXURY CHECKOUT & CART */}
-      <div className={`fixed inset-y-0 right-0 w-full sm:w-[450px] max-w-full bg-white z-[180] shadow-[0_0_60px_rgba(0,0,0,0.15)] flex flex-col transition-transform duration-500 transform ${showCart ? 'translate-x-0' : 'translate-x-full'}`}>
-        <header className="px-4 sm:px-8 py-4 sm:py-6 border-b border-gray-100 flex items-center justify-between shrink-0">
+      <div className={`fixed inset-y-0 right-0 w-full sm:w-[450px] max-w-full bg-[#6B442B] z-[180] shadow-[0_0_60px_rgba(0,0,0,0.5)] flex flex-col transition-transform duration-500 transform ${showCart ? 'translate-x-0' : 'translate-x-full'}`}>
+        <header className="px-4 sm:px-8 py-4 sm:py-6 border-b border-[rgba(243,214,182,0.15)] flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-[#b08d26]">shopping_bag</span>
-            <h3 className="text-md font-black uppercase tracking-wider">Your Shopping Bag</h3>
-            <span className="bg-gray-100 text-gray-700 text-[9px] px-2 py-0.5 rounded-full font-bold ml-2">{cart.length}</span>
+            <span className="material-symbols-outlined text-[#D7A36F]">shopping_bag</span>
+            <h3 className="text-md font-black uppercase tracking-wider text-[#FFF3E4]">Your Shopping Bag</h3>
+            <span className="bg-[#7A5034] text-[#E8C9A8] text-[9px] px-2 py-0.5 rounded-full font-bold ml-2">{cart.length}</span>
           </div>
-          <button onClick={() => setShowCart(false)} className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+          <button onClick={() => setShowCart(false)} className="w-10 h-10 rounded-full hover:bg-[#7A5034] flex items-center justify-center transition-colors text-[#E8C9A8]">
             <span className="material-symbols-outlined">close</span>
           </button>
         </header>
 
         {/* CART STEP CONTENT */}
         {checkoutStep === 'cart' && (
-          <div className="flex-1 overflow-y-auto flex flex-col bg-gray-50/50">
+          <div className="flex-1 overflow-y-auto flex flex-col bg-[#5A3925]/50">
             {cart.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center py-20 px-8 text-center">
-                <span className="material-symbols-outlined text-4xl text-gray-300 mb-4 font-light">shopping_bag</span>
-                <p className="text-xs font-black uppercase tracking-widest text-gray-400">Your bag is currently empty</p>
-                <p className="text-[10px] text-gray-400 mt-2 max-w-xs leading-relaxed">Customize your luxury item and click "Add to Bag" to begin the checkout process.</p>
+                <span className="material-symbols-outlined text-4xl text-[#B99372] mb-4 font-light">shopping_bag</span>
+                <p className="text-xs font-black uppercase tracking-widest text-[#B99372]">Your bag is currently empty</p>
+                <p className="text-[10px] text-[#B99372] mt-2 max-w-xs leading-relaxed">Customize your luxury item and click "Add to Bag" to begin the checkout process.</p>
               </div>
             ) : (
               <div className="flex-1 p-4 sm:p-6 space-y-4">
                 {cart.map((item) => (
-                  <div key={item.id} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative group flex gap-4">
-                    <div className="w-16 h-16 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
-                      <div className={`w-6 h-6 rotate-45 ${item.gemColor} border border-gray-200`}></div>
+                  <div key={item.id} className="bg-[#7A5034] p-5 rounded-2xl border border-[rgba(243,214,182,0.15)] shadow-sm relative group flex gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-[#7A5034] flex items-center justify-center shrink-0 border border-[rgba(243,214,182,0.15)]">
+                      <div className={`w-6 h-6 rotate-45 ${item.gemColor} border border-[rgba(243,214,182,0.15)]`}></div>
                     </div>
                     <div className="flex-1 min-w-0 pr-8">
-                      <h4 className="text-xs font-black uppercase text-gray-900 truncate mb-1">{item.title}</h4>
-                      <div className="text-[8px] uppercase tracking-wide text-gray-400 space-y-0.5">
+                      <h4 className="text-xs font-black uppercase text-[#FFF3E4] truncate mb-1">{item.title}</h4>
+                      <div className="text-[8px] uppercase tracking-wide text-[#B99372] space-y-0.5">
                         <p>{item.config.setting} setting · {item.config.material} · {item.config.width}mm</p>
                         <p>{item.config.gemstone} · {item.gemCarat.toFixed(1)} ct</p>
                         {item.engraving && <p className="text-amber-800 font-serif italic truncate">Engraved: "{item.engraving}"</p>}
                       </div>
-                      <p className="text-xs font-black text-[#b08d26] mt-2">${item.price.toLocaleString()}</p>
                     </div>
                     <button 
                       onClick={() => removeCartItem(item.id)}
-                      className="absolute top-4 right-4 w-6 h-6 rounded-full hover:bg-red-50 text-gray-300 hover:text-red-500 flex items-center justify-center transition-colors"
+                      className="absolute top-4 right-4 w-6 h-6 rounded-full hover:bg-red-50 text-[#B99372] hover:text-red-500 flex items-center justify-center transition-colors"
                     >
                       <span className="material-symbols-outlined text-sm">delete</span>
                     </button>
@@ -1252,16 +1190,10 @@ const DesignStudio = () => {
 
             {/* CART FOOTER */}
             {cart.length > 0 && (
-              <div className="border-t border-gray-100 bg-white p-4 sm:p-8 shrink-0 space-y-4 sm:space-y-6 safe-bottom">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Order Total</span>
-                  <span className="text-2xl font-black text-black">
-                    ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}
-                  </span>
-                </div>
+              <div className="border-t border-[rgba(243,214,182,0.15)] bg-[#6A452D] p-4 sm:p-8 shrink-0 safe-bottom">
                 <button 
                   onClick={() => setCheckoutStep('shipping')}
-                  className="w-full bg-[#b08d26] text-white hover:bg-black py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#b08d26]/10"
+                  className="w-full bg-[#D7A36F] text-[#1a0f06] hover:bg-[#B87948] py-4 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all shadow-lg shadow-[#D7A36F]/10"
                 >
                   Proceed to Checkout <span className="material-symbols-outlined text-sm">arrow_forward</span>
                 </button>
@@ -1272,73 +1204,73 @@ const DesignStudio = () => {
 
         {/* SHIPPING FORM STEP */}
         {checkoutStep === 'shipping' && (
-          <form onSubmit={handleCheckoutSubmit} className="flex-1 flex flex-col overflow-hidden bg-white">
+          <form onSubmit={handleCheckoutSubmit} className="flex-1 flex flex-col overflow-hidden bg-[#6B442B]">
             <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-6">
               <div>
-                <span className="text-[8px] font-black text-[#b08d26] uppercase tracking-widest">Step 2 of 3</span>
-                <h4 className="text-md font-black uppercase mt-1">Shipping & Billing</h4>
+                <span className="text-[8px] font-black text-[#D7A36F] uppercase tracking-widest">Step 2 of 3</span>
+                <h4 className="text-md font-black uppercase text-[#FFF3E4] mt-1">Shipping & Billing</h4>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Email Address *</label>
+                  <label className="block text-[8px] font-black text-[#B99372] uppercase tracking-widest mb-1.5">Email Address *</label>
                   <input required type="email" placeholder="client@luxury.com" 
                          value={shippingInfo.email} onChange={(e) => setShippingInfo({ ...shippingInfo, email: e.target.value })}
-                         className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
+                         className="w-full border border-[rgba(243,214,182,0.15)] bg-[#7A5034]/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#D7A36F] font-bold text-[#FFF3E4] placeholder:text-[#B99372]" />
                 </div>
                 <div>
-                  <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Full Name *</label>
+                  <label className="block text-[8px] font-black text-[#B99372] uppercase tracking-widest mb-1.5">Full Name *</label>
                   <input required type="text" placeholder="ALEXANDRA SMITH" 
                          value={shippingInfo.name} onChange={(e) => setShippingInfo({ ...shippingInfo, name: e.target.value.toUpperCase() })}
-                         className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
+                         className="w-full border border-[rgba(243,214,182,0.15)] bg-[#7A5034]/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#D7A36F] font-bold text-[#FFF3E4] placeholder:text-[#B99372]" />
                 </div>
                 <div>
-                  <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Shipping Address *</label>
+                  <label className="block text-[8px] font-black text-[#B99372] uppercase tracking-widest mb-1.5">Shipping Address *</label>
                   <input required type="text" placeholder="128 FIFTH AVENUE, NEW YORK, NY" 
                          value={shippingInfo.address} onChange={(e) => setShippingInfo({ ...shippingInfo, address: e.target.value.toUpperCase() })}
-                         className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
+                         className="w-full border border-[rgba(243,214,182,0.15)] bg-[#7A5034]/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#D7A36F] font-bold text-[#FFF3E4] placeholder:text-[#B99372]" />
                 </div>
                 
-                <div className="border-t border-gray-100 pt-6">
-                  <h5 className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-4">Payment Credentials</h5>
+                <div className="border-t border-[rgba(243,214,182,0.15)] pt-6">
+                  <h5 className="text-[9px] font-black uppercase tracking-widest text-[#B99372] mb-4">Payment Credentials</h5>
                   <div>
-                    <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Card Number *</label>
+                    <label className="block text-[8px] font-black text-[#B99372] uppercase tracking-widest mb-1.5">Card Number *</label>
                     <input required type="text" placeholder="4111 2222 3333 4444" 
                            value={shippingInfo.card} onChange={(e) => setShippingInfo({ ...shippingInfo, card: e.target.value })}
-                           className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold" />
+                           className="w-full border border-[rgba(243,214,182,0.15)] bg-[#7A5034]/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#D7A36F] font-bold text-[#FFF3E4] placeholder:text-[#B99372]" />
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-3">
                     <div>
-                      <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Expiry *</label>
+                      <label className="block text-[8px] font-black text-[#B99372] uppercase tracking-widest mb-1.5">Expiry *</label>
                       <input required type="text" placeholder="MM/YY" 
                              value={shippingInfo.expiry} onChange={(e) => setShippingInfo({ ...shippingInfo, expiry: e.target.value })}
-                             className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold text-center" />
+                             className="w-full border border-[rgba(243,214,182,0.15)] bg-[#7A5034]/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#D7A36F] font-bold text-[#FFF3E4] placeholder:text-[#B99372] text-center" />
                     </div>
                     <div>
-                      <label className="block text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1.5">CVC *</label>
+                      <label className="block text-[8px] font-black text-[#B99372] uppercase tracking-widest mb-1.5">CVC *</label>
                       <input required type="text" placeholder="123" 
                              value={shippingInfo.cvc} onChange={(e) => setShippingInfo({ ...shippingInfo, cvc: e.target.value })}
-                             className="w-full border border-gray-100 bg-gray-50/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#b08d26] font-bold text-center" />
+                             className="w-full border border-[rgba(243,214,182,0.15)] bg-[#7A5034]/50 rounded-xl px-4 py-3 text-xs outline-none focus:border-[#D7A36F] font-bold text-[#FFF3E4] placeholder:text-[#B99372] text-center" />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="border-t border-gray-100 bg-white p-4 sm:p-8 shrink-0 flex gap-2 sm:gap-4 safe-bottom">
+            <div className="border-t border-[rgba(243,214,182,0.15)] bg-[#6A452D] p-4 sm:p-8 shrink-0 flex gap-2 sm:gap-4 safe-bottom">
               <button 
                 type="button"
                 onClick={() => setCheckoutStep('cart')}
-                className="border border-gray-200 hover:bg-gray-50 px-5 py-4 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all"
+                className="border border-[rgba(243,214,182,0.15)] hover:bg-[#7A5034] px-5 py-4 rounded-xl text-[9px] font-black uppercase tracking-wider text-[#E8C9A8] transition-all"
               >
                 Back
               </button>
               <button 
                 type="submit"
-                className="flex-1 bg-black text-white hover:bg-[#b08d26] px-3 py-4 rounded-xl text-[9px] font-black uppercase tracking-wider sm:tracking-[0.2em] transition-all shadow-lg"
+                className="flex-1 bg-[#D7A36F] text-[#1a0f06] hover:bg-[#B87948] px-3 py-4 rounded-xl text-[9px] font-black uppercase tracking-wider sm:tracking-[0.2em] transition-all shadow-lg"
               >
-                <span className="sm:hidden">Pay ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}</span>
-                <span className="hidden sm:inline">Submit Order & Pay ${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}</span>
+                <span className="sm:hidden">Submit Order</span>
+                <span className="hidden sm:inline">Submit Order</span>
               </button>
             </div>
           </form>
@@ -1346,28 +1278,24 @@ const DesignStudio = () => {
 
         {/* ORDER SUCCESS STEP */}
         {checkoutStep === 'success' && (
-          <div className="flex-1 overflow-y-auto flex flex-col p-4 sm:p-8 items-center justify-center text-center bg-white">
+          <div className="flex-1 overflow-y-auto flex flex-col p-4 sm:p-8 items-center justify-center text-center bg-[#6B442B]">
             <span className="material-symbols-outlined text-6xl text-green-600 bg-green-50 p-6 rounded-full animate-bounce mb-6">verified</span>
-            <span className="text-[9px] font-black text-[#b08d26] uppercase tracking-[0.2em] mb-1">Receipt Confirmed</span>
-            <h4 className="text-xl font-black uppercase text-gray-900 mb-3">Masterpiece Order Placed!</h4>
-            <p className="text-xs text-gray-400 max-w-xs leading-relaxed mb-8">Thank you, <span className="font-bold text-black">{shippingInfo.name}</span>. An invoice receipt has been dispatched to <span className="font-bold text-black">{shippingInfo.email}</span>. Your bespoke jewelry item is officially under craftsmanship.</p>
+            <span className="text-[9px] font-black text-[#D7A36F] uppercase tracking-[0.2em] mb-1">Receipt Confirmed</span>
+            <h4 className="text-xl font-black uppercase text-[#FFF3E4] mb-3">Masterpiece Order Placed!</h4>
+            <p className="text-xs text-[#B99372] max-w-xs leading-relaxed mb-8">Thank you, <span className="font-bold text-[#FFF3E4]">{shippingInfo.name}</span>. An invoice receipt has been dispatched to <span className="font-bold text-[#FFF3E4]">{shippingInfo.email}</span>. Your bespoke jewelry item is officially under craftsmanship.</p>
 
-            <div className="w-full bg-gray-50 border border-gray-100 p-6 rounded-2xl text-[9px] uppercase text-gray-500 font-bold text-left space-y-2 mb-8">
-              <div className="flex justify-between border-b border-gray-200/50 pb-2">
+            <div className="w-full bg-[#7A5034] border border-[rgba(243,214,182,0.15)] p-6 rounded-2xl text-[9px] uppercase text-[#B99372] font-bold text-left space-y-2 mb-8">
+              <div className="flex justify-between border-b border-[rgba(243,214,182,0.15)] pb-2">
                 <span>Order Reference:</span>
-                <span className="text-black font-black">#SHM-{Math.floor(100000 + Math.random() * 900000)}</span>
+                <span className="text-[#FFF3E4] font-black">#SHM-{Math.floor(100000 + Math.random() * 900000)}</span>
               </div>
-              <div className="flex justify-between border-b border-gray-200/50 pb-2">
+              <div className="flex justify-between border-b border-[rgba(243,214,182,0.15)] pb-2">
                 <span>Shipment Destination:</span>
-                <span className="text-black font-black truncate max-w-[150px]">{shippingInfo.address}</span>
+                <span className="text-[#FFF3E4] font-black truncate max-w-[150px]">{shippingInfo.address}</span>
               </div>
-              <div className="flex justify-between border-b border-gray-200/50 pb-2">
+              <div className="flex justify-between border-b border-[rgba(243,214,182,0.15)] pb-2">
                 <span>Status:</span>
-                <span className="text-amber-800 font-black">Chế tác thủ công</span>
-              </div>
-              <div className="flex justify-between pt-2">
-                <span>Paid amount:</span>
-                <span className="text-[#b08d26] font-black text-xs">${cart.reduce((sum, item) => sum + item.price, 0).toLocaleString()}</span>
+                <span className="text-amber-800 font-black">Handcrafted</span>
               </div>
             </div>
 
@@ -1376,7 +1304,7 @@ const DesignStudio = () => {
                 clearWholeCart();
                 setShowCart(false);
               }}
-              className="w-full bg-black text-white hover:bg-[#b08d26] py-4 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all shadow-lg"
+              className="w-full bg-[#D7A36F] text-[#1a0f06] hover:bg-[#B87948] py-4 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] transition-all shadow-lg"
             >
               Continue Designing
             </button>

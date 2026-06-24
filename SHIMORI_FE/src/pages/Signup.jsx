@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import api from '../api/axios';
 
+
 const Signup = () => {
   const navigate = useNavigate();
 
@@ -34,31 +35,31 @@ const Signup = () => {
     const nextErrors = {};
 
     if (!form.username.trim()) {
-      nextErrors.username = 'Username không được để trống';
+      nextErrors.username = 'Username cannot be empty';
     } else if (form.username.trim().length < 3) {
-      nextErrors.username = 'Username phải có ít nhất 3 ký tự';
+      nextErrors.username = 'Username must be at least 3 characters';
     }
 
     if (!form.fullName.trim()) {
-      nextErrors.fullName = 'Họ tên không được để trống';
+      nextErrors.fullName = 'Full name cannot be empty';
     }
 
     if (!form.email.trim()) {
-      nextErrors.email = 'Email không được để trống';
+      nextErrors.email = 'Email cannot be empty';
     } else if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-      nextErrors.email = 'Email không hợp lệ';
+      nextErrors.email = 'Invalid email';
     }
 
     if (!form.password.trim()) {
-      nextErrors.password = 'Mật khẩu không được để trống';
+      nextErrors.password = 'Password cannot be empty';
     } else if (form.password.length < 6) {
-      nextErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+      nextErrors.password = 'Password must be at least 6 characters';
     }
 
     if (!form.confirmPassword.trim()) {
-      nextErrors.confirmPassword = 'Vui lòng nhập lại mật khẩu';
+      nextErrors.confirmPassword = 'Please confirm your password';
     } else if (form.confirmPassword !== form.password) {
-      nextErrors.confirmPassword = 'Mật khẩu nhập lại không khớp';
+      nextErrors.confirmPassword = 'Passwords do not match';
     }
 
     setErrors(nextErrors);
@@ -81,7 +82,7 @@ const Signup = () => {
         password: form.password,
       });
 
-      toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
+      toast.success('Registration successful! Please log in.');
 
       setTimeout(() => {
         navigate('/login');
@@ -97,62 +98,123 @@ const Signup = () => {
         });
       }
 
-      toast.error(data?.message || 'Đăng ký thất bại!');
+      toast.error(data?.message || 'Registration failed!');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#5A3925' }}>
       <Toaster position="bottom-right" reverseOrder={false} />
 
-      <div className="hidden lg:w-1/2 lg:flex lg:flex-col lg:justify-between bg-gradient-to-b from-gray-900 to-gray-800 p-10 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute w-96 h-96 bg-amber-500 rounded-full blur-3xl -top-20 -left-20"></div>
-          <div className="absolute w-96 h-96 bg-amber-400 rounded-full blur-3xl top-40 -right-40"></div>
-          <div className="absolute w-96 h-96 bg-amber-500 rounded-full blur-3xl bottom-20 left-1/3"></div>
+      <div style={{
+        display: 'none',
+        width: '50%',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        background: 'linear-gradient(to bottom, #5A3925, #6B442B)',
+        padding: '40px',
+        position: 'relative',
+        overflow: 'hidden',
+      }} className="lg:flex lg:flex-col lg:justify-between">
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.2,
+        }}>
+          <div style={{
+            position: 'absolute',
+            width: 384,
+            height: 384,
+            backgroundColor: '#D7A36F',
+            borderRadius: '9999px',
+            filter: 'blur(80px)',
+            top: -80,
+            left: -80,
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            width: 384,
+            height: 384,
+            backgroundColor: '#B87948',
+            borderRadius: '9999px',
+            filter: 'blur(80px)',
+            top: 160,
+            right: -160,
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            width: 384,
+            height: 384,
+            backgroundColor: '#D7A36F',
+            borderRadius: '9999px',
+            filter: 'blur(80px)',
+            bottom: 80,
+            left: '33%',
+          }}></div>
         </div>
 
-        <div className="relative z-10 flex items-center gap-3">
-          <span className="material-symbols-outlined text-amber-500 text-4xl">
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}>
+          <span className="material-symbols-outlined" style={{ color: '#D7A36F', fontSize: 40 }}>
             diamond
           </span>
-          <h1 className="text-white text-3xl font-bold">SHIMORI</h1>
+          <h1 style={{ color: '#FFF3E4', fontSize: 30, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>SHIMORI</h1>
         </div>
 
-        <div className="relative z-10 flex-1 flex items-center justify-center">
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
           <img
             src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=70&w=800&auto=format&fit=crop"
             alt="Diamond Ring"
-            className="w-96 h-96 object-cover rounded-lg shadow-2xl"
+            style={{ width: 384, height: 384, objectFit: 'cover', borderRadius: 12, boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}
           />
         </div>
 
-        <div className="relative z-10">
-          <h2 className="text-white text-3xl font-bold mb-3">
+        <div style={{ position: 'relative', zIndex: 10 }}>
+          <h2 style={{ color: '#FFF3E4', fontSize: 30, fontWeight: 700, marginBottom: 12, fontFamily: "'Playfair Display', serif" }}>
             Create your SHIMORI account.
           </h2>
-          <p className="text-gray-300 text-lg">
+          <p style={{ color: '#E8C9A8', fontSize: 18 }}>
             Save designs, continue drafts, and build your jewelry collection.
           </p>
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6 py-12 sm:px-12">
-        <div className="w-full max-w-md">
-          <div className="mb-10">
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+      <div style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#6A452D',
+        padding: '48px 24px',
+        borderLeft: '1px solid rgba(243, 214, 182, 0.25)',
+      }} className="lg:w-1/2 lg:px-12">
+        <div style={{ width: '100%', maxWidth: 448 }}>
+          <div style={{ marginBottom: 40 }}>
+            <h1 style={{ fontSize: 36, fontWeight: 700, color: '#FFF3E4', marginBottom: 12, fontFamily: "'Playfair Display', serif" }}>
               Create Account
             </h1>
-            <p className="text-gray-600">
+            <p style={{ color: '#E8C9A8', fontSize: 16 }}>
               Join SHIMORI and start designing your own jewelry.
             </p>
           </div>
 
-          <form onSubmit={handleSignup} className="space-y-5">
+          <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#E8C9A8', marginBottom: 8 }}>
                 Username
               </label>
 
@@ -161,22 +223,41 @@ const Signup = () => {
                 value={form.username}
                 onChange={(e) => handleChange('username', e.target.value)}
                 placeholder="demo"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
-                  errors.username
-                    ? 'border-red-400 focus:ring-red-300'
-                    : 'border-gray-200 focus:ring-yellow-400'
-                }`}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `1px solid ${errors.username ? '#b91c1c' : 'rgba(243, 214, 182, 0.25)'}`,
+                  borderRadius: 8,
+                  outline: 'none',
+                  backgroundColor: '#6B442B',
+                  color: '#FFF3E4',
+                  fontSize: 16,
+                  transition: 'box-shadow 0.2s, border-color 0.2s',
+                  boxShadow: errors.username ? '0 0 0 2px rgba(185,28,28,0.3)' : undefined,
+                }}
+                onFocus={(e) => {
+                  if (!errors.username) {
+                    e.target.style.boxShadow = '0 0 0 2px rgba(192,147,108,0.4)';
+                    e.target.style.borderColor = '#D7A36F';
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!errors.username) {
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = 'rgba(243, 214, 182, 0.25)';
+                  }
+                }}
               />
 
               {errors.username && (
-                <p className="text-red-500 text-xs mt-2 font-medium">
+                <p style={{ color: '#b91c1c', fontSize: 12, marginTop: 8, fontWeight: 500 }}>
                   {errors.username}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#E8C9A8', marginBottom: 8 }}>
                 Full Name
               </label>
 
@@ -185,22 +266,41 @@ const Signup = () => {
                 value={form.fullName}
                 onChange={(e) => handleChange('fullName', e.target.value)}
                 placeholder="Shimori User"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
-                  errors.fullName
-                    ? 'border-red-400 focus:ring-red-300'
-                    : 'border-gray-200 focus:ring-yellow-400'
-                }`}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `1px solid ${errors.fullName ? '#b91c1c' : 'rgba(243, 214, 182, 0.25)'}`,
+                  borderRadius: 8,
+                  outline: 'none',
+                  backgroundColor: '#6B442B',
+                  color: '#FFF3E4',
+                  fontSize: 16,
+                  transition: 'box-shadow 0.2s, border-color 0.2s',
+                  boxShadow: errors.fullName ? '0 0 0 2px rgba(185,28,28,0.3)' : undefined,
+                }}
+                onFocus={(e) => {
+                  if (!errors.fullName) {
+                    e.target.style.boxShadow = '0 0 0 2px rgba(192,147,108,0.4)';
+                    e.target.style.borderColor = '#D7A36F';
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!errors.fullName) {
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = 'rgba(243, 214, 182, 0.25)';
+                  }
+                }}
               />
 
               {errors.fullName && (
-                <p className="text-red-500 text-xs mt-2 font-medium">
+                <p style={{ color: '#b91c1c', fontSize: 12, marginTop: 8, fontWeight: 500 }}>
                   {errors.fullName}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#E8C9A8', marginBottom: 8 }}>
                 Email
               </label>
 
@@ -209,58 +309,108 @@ const Signup = () => {
                 value={form.email}
                 onChange={(e) => handleChange('email', e.target.value)}
                 placeholder="name@example.com"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
-                  errors.email
-                    ? 'border-red-400 focus:ring-red-300'
-                    : 'border-gray-200 focus:ring-yellow-400'
-                }`}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `1px solid ${errors.email ? '#b91c1c' : 'rgba(243, 214, 182, 0.25)'}`,
+                  borderRadius: 8,
+                  outline: 'none',
+                  backgroundColor: '#6B442B',
+                  color: '#FFF3E4',
+                  fontSize: 16,
+                  transition: 'box-shadow 0.2s, border-color 0.2s',
+                  boxShadow: errors.email ? '0 0 0 2px rgba(185,28,28,0.3)' : undefined,
+                }}
+                onFocus={(e) => {
+                  if (!errors.email) {
+                    e.target.style.boxShadow = '0 0 0 2px rgba(192,147,108,0.4)';
+                    e.target.style.borderColor = '#D7A36F';
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!errors.email) {
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = 'rgba(243, 214, 182, 0.25)';
+                  }
+                }}
               />
 
               {errors.email && (
-                <p className="text-red-500 text-xs mt-2 font-medium">
+                <p style={{ color: '#b91c1c', fontSize: 12, marginTop: 8, fontWeight: 500 }}>
                   {errors.email}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#E8C9A8', marginBottom: 8 }}>
                 Password
               </label>
 
-              <div className="relative">
+              <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
                   onChange={(e) => handleChange('password', e.target.value)}
                   placeholder="●●●●●●●●"
-                  className={`w-full px-4 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
-                    errors.password
-                      ? 'border-red-400 focus:ring-red-300'
-                      : 'border-gray-200 focus:ring-yellow-400'
-                  }`}
+                  style={{
+                    width: '100%',
+                    padding: '12px 48px 12px 16px',
+                    border: `1px solid ${errors.password ? '#b91c1c' : 'rgba(243, 214, 182, 0.25)'}`,
+                    borderRadius: 8,
+                    outline: 'none',
+                    backgroundColor: '#6B442B',
+                    color: '#FFF3E4',
+                    fontSize: 16,
+                    transition: 'box-shadow 0.2s, border-color 0.2s',
+                    boxShadow: errors.password ? '0 0 0 2px rgba(185,28,28,0.3)' : undefined,
+                  }}
+                  onFocus={(e) => {
+                    if (!errors.password) {
+                      e.target.style.boxShadow = '0 0 0 2px rgba(192,147,108,0.4)';
+                      e.target.style.borderColor = '#D7A36F';
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!errors.password) {
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.borderColor = 'rgba(243, 214, 182, 0.25)';
+                    }
+                  }}
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  style={{
+                    position: 'absolute',
+                    right: 16,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#B99372',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = '#E8C9A8'}
+                  onMouseLeave={(e) => e.target.style.color = '#B99372'}
                 >
-                  <span className="material-symbols-outlined text-xl">
+                  <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                     {showPassword ? 'visibility_off' : 'visibility'}
                   </span>
                 </button>
               </div>
 
               {errors.password && (
-                <p className="text-red-500 text-xs mt-2 font-medium">
+                <p style={{ color: '#b91c1c', fontSize: 12, marginTop: 8, fontWeight: 500 }}>
                   {errors.password}
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#E8C9A8', marginBottom: 8 }}>
                 Confirm Password
               </label>
 
@@ -271,15 +421,34 @@ const Signup = () => {
                   handleChange('confirmPassword', e.target.value)
                 }
                 placeholder="●●●●●●●●"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
-                  errors.confirmPassword
-                    ? 'border-red-400 focus:ring-red-300'
-                    : 'border-gray-200 focus:ring-yellow-400'
-                }`}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `1px solid ${errors.confirmPassword ? '#b91c1c' : 'rgba(243, 214, 182, 0.25)'}`,
+                  borderRadius: 8,
+                  outline: 'none',
+                  backgroundColor: '#6B442B',
+                  color: '#FFF3E4',
+                  fontSize: 16,
+                  transition: 'box-shadow 0.2s, border-color 0.2s',
+                  boxShadow: errors.confirmPassword ? '0 0 0 2px rgba(185,28,28,0.3)' : undefined,
+                }}
+                onFocus={(e) => {
+                  if (!errors.confirmPassword) {
+                    e.target.style.boxShadow = '0 0 0 2px rgba(192,147,108,0.4)';
+                    e.target.style.borderColor = '#D7A36F';
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!errors.confirmPassword) {
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = 'rgba(243, 214, 182, 0.25)';
+                  }
+                }}
               />
 
               {errors.confirmPassword && (
-                <p className="text-red-500 text-xs mt-2 font-medium">
+                <p style={{ color: '#b91c1c', fontSize: 12, marginTop: 8, fontWeight: 500 }}>
                   {errors.confirmPassword}
                 </p>
               )}
@@ -288,20 +457,45 @@ const Signup = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 py-3 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 mt-8"
+              style={{
+                width: '100%',
+                background: loading ? '#B99372' : 'linear-gradient(135deg, #D7A36F, #B87948)',
+                color: '#140c05',
+                padding: '12px 0',
+                borderRadius: 8,
+                fontWeight: 700,
+                fontSize: 18,
+                border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginTop: 32,
+                transition: 'opacity 0.2s',
+                opacity: loading ? 0.6 : 1,
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) e.target.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) e.target.style.opacity = '1';
+              }}
             >
               {loading ? 'Creating...' : 'Create Account'}
-              <span className="material-symbols-outlined text-xl">
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                 arrow_forward
               </span>
             </button>
           </form>
 
-          <p className="text-center text-gray-600 mt-8">
+          <p style={{ textAlign: 'center', color: '#B99372', marginTop: 32, fontSize: 15 }}>
             Already have an account?{' '}
             <Link
               to="/login"
-              className="font-semibold text-yellow-500 hover:text-yellow-600"
+              style={{ fontWeight: 600, color: '#D7A36F', textDecoration: 'none' }}
+              onMouseEnter={(e) => e.target.style.color = '#F3D6B6'}
+              onMouseLeave={(e) => e.target.style.color = '#D7A36F'}
             >
               Sign In
             </Link>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
+
 const NAV_ITEMS = [
   { label: 'Collections', sectionId: 'collections' },
   { label: 'Process', sectionId: 'process' },
@@ -74,7 +75,10 @@ const Navbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-[100] border-b border-gray-100 bg-white shadow-sm">
+    <header
+      style={{ background: 'rgba(67, 39, 24, 0.88)', borderBottom: '1px solid rgba(243, 214, 182, 0.25)' }}
+      className="sticky top-0 z-[100] backdrop-blur-xl"
+    >
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:h-20 lg:px-10">
         <div className="flex min-w-0 items-center gap-12">
           <button
@@ -83,8 +87,13 @@ const Navbar = () => {
             className="flex shrink-0 items-center gap-2"
             aria-label="Go to home page"
           >
-            <span className="material-symbols-outlined text-2xl">diamond</span>
-            <span className="text-lg font-extrabold uppercase tracking-tighter sm:text-xl">
+            <span style={{ color: '#F3D6B6' }} className="material-symbols-outlined text-2xl">
+              diamond
+            </span>
+            <span
+              style={{ color: '#F3D6B6' }}
+              className="font-display text-lg font-extrabold uppercase tracking-tighter sm:text-xl"
+            >
               SHIMORI
             </span>
           </button>
@@ -95,7 +104,8 @@ const Navbar = () => {
                 key={item.sectionId}
                 href={`/home#${item.sectionId}`}
                 onClick={(event) => handleNavClick(event, item.sectionId)}
-                className="text-[11px] font-black uppercase tracking-widest text-gray-500 transition-colors hover:text-black"
+                style={{ color: '#F3D6B6' }}
+                className="text-[11px] font-black uppercase tracking-widest transition-colors hover:text-[#D7A36F]"
               >
                 {item.label}
               </a>
@@ -105,20 +115,32 @@ const Navbar = () => {
 
         <div className="hidden min-w-0 flex-1 items-center justify-end gap-4 lg:flex xl:gap-6">
           <div className="relative w-full max-w-xs">
-            <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg text-gray-400">
+            <span
+              style={{ color: '#B99372' }}
+              className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-lg"
+            >
               search
             </span>
             <input
               type="text"
               placeholder="Find your style..."
-              className="w-full rounded-full border-none bg-gray-50 py-2.5 pl-11 pr-4 text-xs font-medium outline-none transition-all focus:ring-2 focus:ring-[#facc15]/50"
+              className="w-full rounded-full py-2.5 pl-11 pr-4 text-xs font-medium outline-none transition-all focus:ring-2"
+              style={{ background: '#5C3A24', color: '#FFF3E4', border: '1px solid rgba(243, 214, 182, 0.18)' }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#D7A36F';
+                e.target.style.boxShadow = '0 0 0 2px rgba(215, 163, 111, 0.3)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'rgba(243, 214, 182, 0.18)';
+                e.target.style.boxShadow = 'none';
+              }}
             />
           </div>
 
           <button
             type="button"
             onClick={() => navigate('/design')}
-            className="shrink-0 rounded-lg bg-[#facc15] px-5 py-2.5 text-[11px] font-black uppercase tracking-widest text-black shadow-md transition-all hover:bg-black hover:text-white"
+            className="btn-gold shrink-0 rounded-lg px-5 py-2.5 text-[11px] font-black uppercase tracking-widest shadow-md transition-all"
           >
             Design Now
           </button>
@@ -127,26 +149,35 @@ const Navbar = () => {
             <button
               type="button"
               onClick={handleLogout}
-              className="shrink-0 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all hover:text-red-500"
+              className="shrink-0 rounded-lg border px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all"
+              style={{ borderColor: 'rgba(243, 214, 182, 0.25)', color: '#E8C9A8' }}
+              onMouseEnter={(e) => { e.target.style.background = '#7C5438'; e.target.style.color = '#F3D6B6'; }}
+              onMouseLeave={(e) => { e.target.style.background = 'transparent'; e.target.style.color = '#E8C9A8'; }}
             >
               Logout
             </button>
           ) : (
             <Link
               to="/login"
-              className="shrink-0 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all hover:text-[#facc15]"
+              className="shrink-0 px-3 py-2.5 text-[11px] font-black uppercase tracking-widest transition-all"
+              style={{ color: '#F3D6B6' }}
+              onMouseEnter={(e) => { e.target.style.color = '#D7A36F'; }}
+              onMouseLeave={(e) => { e.target.style.color = '#F3D6B6'; }}
             >
               Sign In
             </Link>
           )}
 
-          <div className="flex shrink-0 items-center gap-4 text-gray-400">
+          <div className="flex shrink-0 items-center gap-4" style={{ color: '#F3D6B6' }}>
             <button
               type="button"
               onClick={() => navigate('/design')}
               aria-label="Open favorites"
             >
-              <span className="material-symbols-outlined transition-colors hover:text-black">
+              <span
+                style={{ color: '#F3D6B6' }}
+                className="material-symbols-outlined transition-colors hover:text-[#D7A36F]"
+              >
                 favorite
               </span>
             </button>
@@ -157,11 +188,17 @@ const Navbar = () => {
               className="relative"
               aria-label="Open shopping bag"
             >
-              <span className="material-symbols-outlined transition-colors hover:text-black">
+              <span
+                style={{ color: '#F3D6B6' }}
+                className="material-symbols-outlined transition-colors hover:text-[#D7A36F]"
+              >
                 shopping_bag
               </span>
               {cartCount > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[8px] font-bold text-white">
+                <span
+                  className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-bold text-white"
+                  style={{ background: '#B87948' }}
+                >
                   {cartCount}
                 </span>
               )}
@@ -172,7 +209,10 @@ const Navbar = () => {
               onClick={() => navigate(isLoggedIn ? '/my-designs' : '/login')}
               aria-label="Open account"
             >
-              <span className="material-symbols-outlined transition-colors hover:text-black">
+              <span
+                style={{ color: '#F3D6B6' }}
+                className="material-symbols-outlined transition-colors hover:text-[#D7A36F]"
+              >
                 person
               </span>
             </button>
@@ -183,12 +223,16 @@ const Navbar = () => {
           <button
             type="button"
             onClick={() => navigate('/design?openCart=true')}
-            className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full"
+            style={{ color: '#F3D6B6' }}
             aria-label="Open shopping bag"
           >
             <span className="material-symbols-outlined">shopping_bag</span>
             {cartCount > 0 && (
-              <span className="absolute right-0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-black px-1 text-[8px] font-bold text-white">
+          <span
+                  className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[8px] font-bold text-white"
+                  style={{ background: '#B87948' }}
+              >
                 {cartCount}
               </span>
             )}
@@ -197,7 +241,8 @@ const Navbar = () => {
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((current) => !current)}
-            className="flex h-10 w-10 items-center justify-center rounded-full hover:bg-gray-100"
+            className="flex h-10 w-10 items-center justify-center rounded-full"
+            style={{ color: '#F3D6B6' }}
             aria-label="Toggle navigation menu"
             aria-expanded={isMobileMenuOpen}
           >
@@ -209,14 +254,26 @@ const Navbar = () => {
       </div>
 
       {isMobileMenuOpen && (
-        <div className="border-t border-gray-100 bg-white px-4 py-5 shadow-lg lg:hidden">
+        <div
+          className="border-t px-4 py-5 shadow-lg lg:hidden"
+          style={{
+            background: '#6B442B',
+            borderTop: '1px solid rgba(243, 214, 182, 0.25)',
+          }}
+        >
           <nav className="flex flex-col">
             {NAV_ITEMS.map((item) => (
               <a
                 key={item.sectionId}
                 href={`/home#${item.sectionId}`}
                 onClick={(event) => handleNavClick(event, item.sectionId)}
-                className="border-b border-gray-100 py-4 text-xs font-black uppercase tracking-widest text-gray-600"
+                className="py-4 text-xs font-black uppercase tracking-widest transition-colors"
+                style={{
+                  color: '#F3D6B6',
+                  borderBottom: '1px solid rgba(243, 214, 182, 0.12)',
+                }}
+                onMouseEnter={(e) => { e.target.style.color = '#D7A36F'; }}
+                onMouseLeave={(e) => { e.target.style.color = '#F3D6B6'; }}
               >
                 {item.label}
               </a>
@@ -230,7 +287,7 @@ const Navbar = () => {
                 setIsMobileMenuOpen(false);
                 navigate('/design');
               }}
-              className="rounded-xl bg-[#facc15] px-4 py-3 text-[10px] font-black uppercase tracking-widest"
+              className="btn-gold rounded-xl px-4 py-3 text-[10px] font-black uppercase tracking-widest"
             >
               Design Now
             </button>
@@ -239,14 +296,38 @@ const Navbar = () => {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-xl border border-red-200 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-500"
+                className="rounded-xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all"
+                style={{
+                  borderColor: 'rgba(243, 214, 182, 0.25)',
+                  color: '#E8C9A8',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#7C5438';
+                  e.target.style.color = '#F3D6B6';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#E8C9A8';
+                }}
               >
                 Logout
               </button>
             ) : (
               <Link
                 to="/login"
-                className="rounded-xl border border-gray-200 px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest"
+                className="rounded-xl border px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest transition-all"
+                style={{
+                  borderColor: 'rgba(243, 214, 182, 0.25)',
+                  color: '#F3D6B6',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = '#7C5438';
+                  e.target.style.color = '#D7A36F';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'transparent';
+                  e.target.style.color = '#F3D6B6';
+                }}
               >
                 Sign In
               </Link>
@@ -260,7 +341,19 @@ const Navbar = () => {
                 setIsMobileMenuOpen(false);
                 navigate('/my-designs');
               }}
-              className="mt-3 w-full rounded-xl border border-gray-200 px-4 py-3 text-[10px] font-black uppercase tracking-widest"
+              className="mt-3 w-full rounded-xl border px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all"
+              style={{
+                borderColor: 'rgba(243, 214, 182, 0.25)',
+                color: '#F3D6B6',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#7C5438';
+                e.target.style.color = '#D7A36F';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.color = '#F3D6B6';
+              }}
             >
               My Designs
             </button>

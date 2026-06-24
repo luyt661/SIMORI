@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
 import api from '../api/axios';
 
+
 const Login = () => {
   const navigate = useNavigate();
 
@@ -18,15 +19,15 @@ const Login = () => {
     const nextErrors = {};
 
     if (!email.trim()) {
-      nextErrors.email = 'Email không được để trống';
+      nextErrors.email = 'Email cannot be empty';
     } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      nextErrors.email = 'Email không hợp lệ';
+      nextErrors.email = 'Invalid email';
     }
 
     if (!password.trim()) {
-      nextErrors.password = 'Mật khẩu không được để trống';
+      nextErrors.password = 'Password cannot be empty';
     } else if (password.length < 6) {
-      nextErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+      nextErrors.password = 'Password must be at least 6 characters';
     }
 
     setErrors(nextErrors);
@@ -50,7 +51,7 @@ const Login = () => {
       const token = res.data.token || res.data.accessToken || res.data.jwt;
 
       if (!token) {
-        throw new Error('Backend không trả token');
+        throw new Error('Backend did not return a token');
       }
 
       localStorage.setItem('token', token);
@@ -60,7 +61,7 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(res.data.user));
       }
 
-      toast.success('Đăng nhập thành công!');
+      toast.success('Login successful!');
 
       setTimeout(() => {
         navigate('/home');
@@ -76,62 +77,123 @@ const Login = () => {
         });
       }
 
-      toast.error(data?.message || 'Sai email hoặc mật khẩu!');
+      toast.error(data?.message || 'Invalid email or password!');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-900">
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#5A3925' }}>
       <Toaster position="bottom-right" reverseOrder={false} />
 
-      <div className="hidden lg:w-1/2 lg:flex lg:flex-col lg:justify-between bg-gradient-to-b from-gray-900 to-gray-800 p-10 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute w-96 h-96 bg-amber-500 rounded-full blur-3xl -top-20 -left-20"></div>
-          <div className="absolute w-96 h-96 bg-amber-400 rounded-full blur-3xl top-40 -right-40"></div>
-          <div className="absolute w-96 h-96 bg-amber-500 rounded-full blur-3xl bottom-20 left-1/3"></div>
+      <div style={{
+        display: 'none',
+        width: '50%',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        background: 'linear-gradient(to bottom, #5A3925, #6B442B)',
+        padding: '40px',
+        position: 'relative',
+        overflow: 'hidden',
+      }} className="lg:flex lg:flex-col lg:justify-between">
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.2,
+        }}>
+          <div style={{
+            position: 'absolute',
+            width: 384,
+            height: 384,
+            backgroundColor: '#D7A36F',
+            borderRadius: '9999px',
+            filter: 'blur(80px)',
+            top: -80,
+            left: -80,
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            width: 384,
+            height: 384,
+            backgroundColor: '#B87948',
+            borderRadius: '9999px',
+            filter: 'blur(80px)',
+            top: 160,
+            right: -160,
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            width: 384,
+            height: 384,
+            backgroundColor: '#D7A36F',
+            borderRadius: '9999px',
+            filter: 'blur(80px)',
+            bottom: 80,
+            left: '33%',
+          }}></div>
         </div>
 
-        <div className="relative z-10 flex items-center gap-3">
-          <span className="material-symbols-outlined text-amber-500 text-4xl">
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+        }}>
+          <span className="material-symbols-outlined" style={{ color: '#D7A36F', fontSize: 40 }}>
             diamond
           </span>
-          <h1 className="text-white text-3xl font-bold">SHIMORI</h1>
+          <h1 style={{ color: '#FFF3E4', fontSize: 30, fontWeight: 700, fontFamily: "'Playfair Display', serif" }}>SHIMORI</h1>
         </div>
 
-        <div className="relative z-10 flex-1 flex items-center justify-center">
+        <div style={{
+          position: 'relative',
+          zIndex: 10,
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
           <img
             src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=70&w=800&auto=format&fit=crop"
             alt="Diamond Ring"
-            className="w-96 h-96 object-cover rounded-lg shadow-2xl"
+            style={{ width: 384, height: 384, objectFit: 'cover', borderRadius: 12, boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}
           />
         </div>
 
-        <div className="relative z-10">
-          <h2 className="text-white text-3xl font-bold mb-3">
+        <div style={{ position: 'relative', zIndex: 10 }}>
+          <h2 style={{ color: '#FFF3E4', fontSize: 30, fontWeight: 700, marginBottom: 12, fontFamily: "'Playfair Display', serif" }}>
             Crafting your digital legacy, one facet at a time.
           </h2>
-          <p className="text-gray-300 text-lg">
+          <p style={{ color: '#E8C9A8', fontSize: 18 }}>
             Experience the future of bespoke jewelry.
           </p>
         </div>
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6 py-12 sm:px-12">
-        <div className="w-full max-w-md">
-          <div className="mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+      <div style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#6A452D',
+        padding: '48px 24px',
+        borderLeft: '1px solid rgba(243, 214, 182, 0.25)',
+      }} className="lg:w-1/2 lg:px-12">
+        <div style={{ width: '100%', maxWidth: 448 }}>
+          <div style={{ marginBottom: 48 }}>
+            <h1 style={{ fontSize: 36, fontWeight: 700, color: '#FFF3E4', marginBottom: 12, fontFamily: "'Playfair Display', serif" }}>
               Welcome Back
             </h1>
-            <p className="text-gray-600">
+            <p style={{ color: '#E8C9A8', fontSize: 16 }}>
               Please enter your details to access your collection.
             </p>
           </div>
 
-          <form onSubmit={handleSignIn} className="space-y-6">
+          <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#E8C9A8', marginBottom: 8 }}>
                 Email
               </label>
 
@@ -143,35 +205,56 @@ const Login = () => {
                   setErrors((prev) => ({ ...prev, email: '' }));
                 }}
                 placeholder="name@example.com"
-                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
-                  errors.email
-                    ? 'border-red-400 focus:ring-red-300'
-                    : 'border-gray-200 focus:ring-yellow-400'
-                }`}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  border: `1px solid ${errors.email ? '#b91c1c' : 'rgba(243, 214, 182, 0.25)'}`,
+                  borderRadius: 8,
+                  outline: 'none',
+                  backgroundColor: '#6B442B',
+                  color: '#FFF3E4',
+                  fontSize: 16,
+                  transition: 'box-shadow 0.2s, border-color 0.2s',
+                  boxShadow: errors.email ? '0 0 0 2px rgba(185,28,28,0.3)' : undefined,
+                }}
+                onFocus={(e) => {
+                  if (!errors.email) {
+                    e.target.style.boxShadow = '0 0 0 2px rgba(192,147,108,0.4)';
+                    e.target.style.borderColor = '#D7A36F';
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!errors.email) {
+                    e.target.style.boxShadow = 'none';
+                    e.target.style.borderColor = 'rgba(243, 214, 182, 0.25)';
+                  }
+                }}
               />
 
               {errors.email && (
-                <p className="text-red-500 text-xs mt-2 font-medium">
+                <p style={{ color: '#b91c1c', fontSize: 12, marginTop: 8, fontWeight: 500 }}>
                   {errors.email}
                 </p>
               )}
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#E8C9A8' }}>
                   Password
                 </label>
 
                 <Link
                   to="/forgot-password"
-                  className="text-sm font-medium text-yellow-500 hover:text-yellow-600"
+                  style={{ fontSize: 14, fontWeight: 500, color: '#D7A36F', textDecoration: 'none' }}
+                  onMouseEnter={(e) => e.target.style.color = '#F3D6B6'}
+                  onMouseLeave={(e) => e.target.style.color = '#D7A36F'}
                 >
                   FORGOT?
                 </Link>
               </div>
 
-              <div className="relative">
+              <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
@@ -180,26 +263,57 @@ const Login = () => {
                     setErrors((prev) => ({ ...prev, password: '' }));
                   }}
                   placeholder="●●●●●●●●"
-                  className={`w-full px-4 pr-12 py-3 border rounded-lg focus:outline-none focus:ring-2 text-gray-900 ${
-                    errors.password
-                      ? 'border-red-400 focus:ring-red-300'
-                      : 'border-gray-200 focus:ring-yellow-400'
-                  }`}
+                  style={{
+                    width: '100%',
+                    padding: '12px 48px 12px 16px',
+                    border: `1px solid ${errors.password ? '#b91c1c' : 'rgba(243, 214, 182, 0.25)'}`,
+                    borderRadius: 8,
+                    outline: 'none',
+                    backgroundColor: '#6B442B',
+                    color: '#FFF3E4',
+                    fontSize: 16,
+                    transition: 'box-shadow 0.2s, border-color 0.2s',
+                    boxShadow: errors.password ? '0 0 0 2px rgba(185,28,28,0.3)' : undefined,
+                  }}
+                  onFocus={(e) => {
+                    if (!errors.password) {
+                      e.target.style.boxShadow = '0 0 0 2px rgba(192,147,108,0.4)';
+                      e.target.style.borderColor = '#D7A36F';
+                    }
+                  }}
+                  onBlur={(e) => {
+                    if (!errors.password) {
+                      e.target.style.boxShadow = 'none';
+                      e.target.style.borderColor = 'rgba(243, 214, 182, 0.25)';
+                    }
+                  }}
                 />
 
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  style={{
+                    position: 'absolute',
+                    right: 16,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#B99372',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = '#E8C9A8'}
+                  onMouseLeave={(e) => e.target.style.color = '#B99372'}
                 >
-                  <span className="material-symbols-outlined text-xl">
+                  <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                     {showPassword ? 'visibility_off' : 'visibility'}
                   </span>
                 </button>
               </div>
 
               {errors.password && (
-                <p className="text-red-500 text-xs mt-2 font-medium">
+                <p style={{ color: '#b91c1c', fontSize: 12, marginTop: 8, fontWeight: 500 }}>
                   {errors.password}
                 </p>
               )}
@@ -208,36 +322,111 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-gray-900 py-3 rounded-lg font-bold text-lg transition-all flex items-center justify-center gap-2 mt-8"
+              style={{
+                width: '100%',
+                background: loading ? '#B99372' : 'linear-gradient(135deg, #D7A36F, #B87948)',
+                color: '#140c05',
+                padding: '12px 0',
+                borderRadius: 8,
+                fontWeight: 700,
+                fontSize: 18,
+                border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                marginTop: 32,
+                transition: 'opacity 0.2s',
+                opacity: loading ? 0.6 : 1,
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) e.target.style.opacity = '0.9';
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) e.target.style.opacity = '1';
+              }}
             >
               {loading ? 'Signing In...' : 'Sign In'}
-              <span className="material-symbols-outlined text-xl">
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
                 arrow_forward
               </span>
             </button>
           </form>
 
-          <p className="text-center text-gray-600 mt-8">
+          <p style={{ textAlign: 'center', color: '#B99372', marginTop: 32, fontSize: 15 }}>
             Don't have an account?{' '}
             <Link
               to="/signup"
-              className="font-semibold text-yellow-500 hover:text-yellow-600"
+              style={{ fontWeight: 600, color: '#D7A36F', textDecoration: 'none' }}
+              onMouseEnter={(e) => e.target.style.color = '#F3D6B6'}
+              onMouseLeave={(e) => e.target.style.color = '#D7A36F'}
             >
               Create an Account
             </Link>
           </p>
 
-          <div className="mt-8 pt-6 border-t border-gray-200 flex gap-4">
+          <div style={{
+            marginTop: 32,
+            paddingTop: 24,
+            borderTop: '1px solid rgba(243, 214, 182, 0.12)',
+            display: 'flex',
+            gap: 16,
+          }}>
             <Link
               to="/home"
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 py-2 rounded-lg font-medium transition-colors text-center"
+              style={{
+                flex: 1,
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(243, 214, 182, 0.25)',
+                color: '#E8C9A8',
+                padding: '8px 0',
+                borderRadius: 8,
+                fontWeight: 500,
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: 14,
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(192,147,108,0.1)';
+                e.target.style.borderColor = '#D7A36F';
+                e.target.style.color = '#F3D6B6';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.borderColor = 'rgba(243, 214, 182, 0.25)';
+                e.target.style.color = '#E8C9A8';
+              }}
             >
               Home
             </Link>
 
             <Link
               to="/design"
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 py-2 rounded-lg font-medium transition-colors text-center"
+              style={{
+                flex: 1,
+                backgroundColor: 'transparent',
+                border: '1px solid rgba(243, 214, 182, 0.25)',
+                color: '#E8C9A8',
+                padding: '8px 0',
+                borderRadius: 8,
+                fontWeight: 500,
+                textAlign: 'center',
+                textDecoration: 'none',
+                fontSize: 14,
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'rgba(192,147,108,0.1)';
+                e.target.style.borderColor = '#D7A36F';
+                e.target.style.color = '#F3D6B6';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.borderColor = 'rgba(243, 214, 182, 0.25)';
+                e.target.style.color = '#E8C9A8';
+              }}
             >
               Design Studio
             </Link>
